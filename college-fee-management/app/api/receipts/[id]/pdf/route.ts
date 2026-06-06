@@ -26,6 +26,9 @@ export async function GET(
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
+  // Helper to replace Rupee symbol
+  const formatRupee = (amount: number) => `Rs. ${amount}`
+
   // Add Tamil Nadu Government watermark (centered, low opacity)
   const watermarkPath = path.join(process.cwd(), 'public/logos/tn-govt-logo.png')
   if (fs.existsSync(watermarkPath)) {
@@ -51,6 +54,9 @@ export async function GET(
   if (fs.existsSync(logoPath)) {
     const logoImage = await pdfDoc.embedPng(fs.readFileSync(logoPath))
     page.drawImage(logoImage, { x: margin, y: y - 30, width: 60, height: 60 })
+  } else {
+    // Fallback text if logo missing
+    page.drawText('College Logo', { x: margin, y: y - 20, size: 10, font })
   }
 
   // Header text
@@ -81,21 +87,21 @@ export async function GET(
   page.drawText(`Course: ${payment.student.course?.name}`, { x: margin + 250, y, size: 10, font })
   y -= 30
 
-  // Payment table
+  // Payment table (using Rs. instead of ₹)
   page.drawText('Payment Details', { x: margin, y, size: 12, font: boldFont })
   y -= 20
   page.drawText('Description', { x: margin, y, size: 10, font: boldFont })
-  page.drawText('Amount (Rs)', { x: margin + 350, y, size: 10, font: boldFont })
+  page.drawText('Amount (Rs.)', { x: margin + 350, y, size: 10, font: boldFont })
   y -= 15
   page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: margin + 500, y: y + 5 }, thickness: 1, color: rgb(0, 0, 0) })
   y -= 15
-  page.drawText(`Tuition Fee - ${payment.student.course?.name}`, { x: margin, y, size: 10, font })
+  page.drawText(`Alumni Association Fee - ${payment.student.course?.name}`, { x: margin, y, size: 10, font })
   page.drawText(`${payment.amount}`, { x: margin + 350, y, size: 10, font })
   y -= 15
   page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: margin + 500, y: y + 5 }, thickness: 1, color: rgb(0, 0, 0) })
   y -= 15
   page.drawText('Total', { x: margin, y, size: 10, font: boldFont })
-  page.drawText(`₹${payment.amount}`, { x: margin + 350, y, size: 10, font: boldFont })
+  page.drawText(`${payment.amount}`, { x: margin + 350, y, size: 10, font: boldFont })
   y -= 30
 
   // QR Code with detailed data
@@ -111,7 +117,7 @@ export async function GET(
   const qrImageEmbed = await pdfDoc.embedPng(qrImage)
   page.drawImage(qrImageEmbed, { x: margin + 450, y: y - 80, width: 80, height: 80 })
 
-  // Footer
+  // Footer (replace ₹ with Rs)
   page.drawText(`Amount in words: Rupees ${payment.amount} only`, { x: margin, y: 80, size: 9, font })
   page.drawText('This is a computer generated receipt', { x: margin, y: 60, size: 8, font })
   page.drawText('Authorized Signature', { x: margin + 450, y: 60, size: 9, font })
