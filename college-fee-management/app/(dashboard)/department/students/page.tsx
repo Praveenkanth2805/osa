@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -8,6 +9,7 @@ import { Student, Course, AcademicYear } from '@/types'
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 export default function DepartmentStudentsPage() {
+  const { data: session } = useSession()
   const [students, setStudents] = useState<Student[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
@@ -52,28 +54,41 @@ export default function DepartmentStudentsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Department ID is taken from the session, not from form
+      const payload = {
+        ...formData,
+        departmentId: session?.user?.departmentId,
+      }
       const url = editingStudent ? `/api/students?id=${editingStudent.id}` : '/api/students'
       const method = editingStudent ? 'PUT' : 'POST'
+      
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error()
-      showToast(`Student ${editingStudent ? 'updated' : 'added'}`, 'success')
+      
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to save student')
+      }
+      
+      showToast(`Student ${editingStudent ? 'updated' : 'added'} successfully`, 'success')
       setShowModal(false)
       resetForm()
       fetchData()
-    } catch (error) {
-      showToast('Failed to save student', 'error')
+    } catch (error: any) {
+      showToast(error.message, 'error')
     }
   }
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error()
-      showToast('Student deleted', 'success')
+      const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to delete student')
+      showToast('Student deleted successfully', 'success')
       setDeleteConfirm({ isOpen: false, studentId: '' })
       fetchData()
     } catch (error) {
@@ -106,12 +121,15 @@ export default function DepartmentStudentsPage() {
     setShowModal(true)
   }
 
+  // Filter courses that belong to this department only
+  const departmentCourses = courses.filter(c => c.departmentId === session?.user?.departmentId)
+
   if (loading) return <LoadingSpinner />
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Students</h1>
+        <h1 className="text-2xl font-bold">Students - {session?.user?.departmentName}</h1>
         <button onClick={() => setShowModal(true)} className="btn-primary">
           Add Student
         </button>
@@ -121,13 +139,13 @@ export default function DepartmentStudentsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium">Register No</th>
-              <th className="px-6 py-3 text-left text-xs font-medium">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium">Course</th>
-              <th className="px-6 py-3 text-left text-xs font-medium">Academic Year</th>
-              <th className="px-6 py-3 text-left text-xs font-medium">Mobile</th>
-              <th className="px-6 py-3 text-left text-xs font-medium">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Register No</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Course</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Academic Year</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Mobile</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -159,9 +177,10 @@ export default function DepartmentStudentsPage() {
         </table>
       </div>
 
+      {/* Modal - no department field */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">{editingStudent ? 'Edit Student' : 'Add Student'}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -174,7 +193,7 @@ export default function DepartmentStudentsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium">Gender *</label>
-                <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })} className="input-field">
+                <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className="input-field">
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other</option>
@@ -185,10 +204,14 @@ export default function DepartmentStudentsPage() {
                 <input type="tel" required pattern="[0-9]{10}" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="input-field" />
               </div>
               <div>
+                <label className="block text-sm font-medium">Department</label>
+                <input type="text" disabled value={session?.user?.departmentName || 'Your Department'} className="input-field bg-gray-100" />
+              </div>
+              <div>
                 <label className="block text-sm font-medium">Course *</label>
                 <select required value={formData.courseId} onChange={(e) => setFormData({ ...formData, courseId: e.target.value })} className="input-field">
                   <option value="">Select Course</option>
-                  {courses.map(course => (
+                  {departmentCourses.map(course => (
                     <option key={course.id} value={course.id}>{course.name} - ₹{course.fee}</option>
                   ))}
                 </select>

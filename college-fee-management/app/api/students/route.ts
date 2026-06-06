@@ -36,7 +36,19 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+  let { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+
+  // For department users, force departmentId to their own
+  if (session.user.role !== 'ADMIN') {
+    departmentId = session.user.departmentId
+    if (!departmentId) {
+      return NextResponse.json({ error: 'Department user has no assigned department' }, { status: 403 })
+    }
+  }
+
+  if (!registerNumber || !name || !mobile || !departmentId || !courseId || !academicYearId) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
 
   if (!validateMobile(mobile)) {
     return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
@@ -49,12 +61,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Register number already exists' }, { status: 400 })
   }
 
-  // Validate academic year exists if provided
-  if (academicYearId) {
-    const yearExists = await prisma.academicYear.findUnique({ where: { id: academicYearId } })
-    if (!yearExists) {
-      return NextResponse.json({ error: 'Invalid academic year' }, { status: 400 })
-    }
+  // Validate academic year exists
+  const yearExists = await prisma.academicYear.findUnique({ where: { id: academicYearId } })
+  if (!yearExists) {
+    return NextResponse.json({ error: 'Invalid academic year' }, { status: 400 })
   }
 
   const student = await prisma.student.create({
@@ -65,7 +75,7 @@ export async function POST(req: NextRequest) {
       mobile,
       departmentId,
       courseId,
-      academicYearId: academicYearId || null,
+      academicYearId,
     },
     include: { department: true, course: true, academicYear: true },
   })
@@ -81,7 +91,24 @@ export async function PUT(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
   const body = await req.json()
-  const { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+  let { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+
+  // For department users, force departmentId to their own
+  if (session.user.role !== 'ADMIN') {
+    departmentId = session.user.departmentId
+    if (!departmentId) {
+      return NextResponse.json({ error: 'Department user has no assigned department' }, { status: 403 })
+    }
+  } else {
+    // For admin, departmentId is required
+    if (!departmentId) {
+      return NextResponse.json({ error: 'Department ID required' }, { status: 400 })
+    }
+  }
+
+  if (!registerNumber || !name || !mobile || !courseId || !academicYearId) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
 
   if (mobile && !validateMobile(mobile)) {
     return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
