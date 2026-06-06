@@ -12,13 +12,15 @@ import {
   BookOpenIcon,
   UserGroupIcon,
   ArchiveBoxIcon,
+  DocumentTextIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
 
 const adminMenuItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
   { name: 'Students', href: '/admin/students', icon: UsersIcon },
-  { name: 'Payments', href: '/admin/payments', icon: CreditCardIcon },
+  { name: 'Payments History', href: '/admin/payments', icon: CreditCardIcon },
+  { name: 'Bill', href: '/admin/bills', icon: DocumentTextIcon },
   { name: 'Academic Years', href: '/admin/academic-years', icon: CalendarIcon },
   { name: 'Departments', href: '/admin/departments', icon: BuildingLibraryIcon },
   { name: 'Courses', href: '/admin/courses', icon: BookOpenIcon },
@@ -30,6 +32,8 @@ const departmentMenuItems = [
   { name: 'Dashboard', href: '/department/dashboard', icon: HomeIcon },
   { name: 'Students', href: '/department/students', icon: UsersIcon },
   { name: 'Payments', href: '/department/payments', icon: CreditCardIcon },
+  { name: 'Bill', href: '/department/bills', icon: DocumentTextIcon }
+
 ]
 
 export default function Sidebar() {
