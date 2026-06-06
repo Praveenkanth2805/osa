@@ -85,7 +85,7 @@ export async function GET(
   page.drawText('Payment Details', { x: margin, y, size: 12, font: boldFont })
   y -= 20
   page.drawText('Description', { x: margin, y, size: 10, font: boldFont })
-  page.drawText('Amount (₹)', { x: margin + 350, y, size: 10, font: boldFont })
+  page.drawText('Amount (Rs)', { x: margin + 350, y, size: 10, font: boldFont })
   y -= 15
   page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: margin + 500, y: y + 5 }, thickness: 1, color: rgb(0, 0, 0) })
   y -= 15

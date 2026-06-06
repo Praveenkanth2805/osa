@@ -84,7 +84,6 @@ export default function ReceiptPage() {
                 Arignar Anna Government Arts College
               </h1>
               <p className="text-gray-600">Villupuram, Tamil Nadu</p>
-              <p className="text-sm text-gray-500">(Affiliated to Thiruvalluvar University)</p>
             </div>
             {/* University logo removed */}
             <div className="w-16"></div> {/* spacer for balance */}

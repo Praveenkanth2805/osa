@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -12,7 +12,7 @@ model User {
   email        String    @unique
   password     String
   name         String
-  role         Role      @default(DEPARTMENT)
+  role         String    @default("DEPARTMENT") // ADMIN or DEPARTMENT
   departmentId String?   @map("department_id")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
@@ -53,20 +53,20 @@ model Student {
   id             String    @id @default(cuid())
   registerNumber String    @unique @map("register_number")
   name           String
-  gender         Gender
+  gender         String    // MALE, FEMALE, OTHER
   mobile         String
   departmentId   String    @map("department_id")
   courseId       String    @map("course_id")
+  academicYearId String?   @map("academic_year_id")
   isArchived     Boolean   @default(false) @map("is_archived")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   department     Department @relation(fields: [departmentId], references: [id])
   course         Course     @relation(fields: [courseId], references: [id])
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
   payments       Payment[]
   @@map("students")
-  academicYearId String?   @map("academic_year_id")
-  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
 }
 
 model AcademicYear {
@@ -78,7 +78,7 @@ model AcademicYear {
   createdAt DateTime @default(now()) @map("created_at")
 
   payments  Payment[]
-  students  Student[]  
+  students  Student[]
   @@map("academic_years")
 }
 
@@ -89,27 +89,11 @@ model Payment {
   academicYearId String      @map("academic_year_id")
   amount         Float
   paymentDate    DateTime    @default(now()) @map("payment_date")
-  status         PaymentStatus @default(PAID)
+  status         String      @default("PAID") // PAID or UNPAID
   createdAt      DateTime    @default(now()) @map("created_at")
 
   student        Student     @relation(fields: [studentId], references: [id])
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
   @@unique([studentId, academicYearId])
   @@map("payments")
-}
-
-enum Role {
-  ADMIN
-  DEPARTMENT
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-enum PaymentStatus {
-  PAID
-  UNPAID
 }

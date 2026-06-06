@@ -21,7 +21,11 @@ export async function GET(req: NextRequest) {
 
   const students = await prisma.student.findMany({
     where,
-    include: { department: true, course: true, payments: true },
+    include: { 
+      department: true, 
+      course: true, 
+      academicYear: true 
+    },
     orderBy: { createdAt: 'desc' },
   })
   return NextResponse.json(students)
@@ -34,7 +38,6 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
 
-
   if (!validateMobile(mobile)) {
     return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
   }
@@ -46,6 +49,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Register number already exists' }, { status: 400 })
   }
 
+  // Validate academic year exists if provided
+  if (academicYearId) {
+    const yearExists = await prisma.academicYear.findUnique({ where: { id: academicYearId } })
+    if (!yearExists) {
+      return NextResponse.json({ error: 'Invalid academic year' }, { status: 400 })
+    }
+  }
+
   const student = await prisma.student.create({
     data: {
       registerNumber,
@@ -54,10 +65,9 @@ export async function POST(req: NextRequest) {
       mobile,
       departmentId,
       courseId,
-      academicYearId: academicYearId || null
-
+      academicYearId: academicYearId || null,
     },
-    include: { department: true, course: true },
+    include: { department: true, course: true, academicYear: true },
   })
   return NextResponse.json(student, { status: 201 })
 }
@@ -73,15 +83,30 @@ export async function PUT(req: NextRequest) {
   const body = await req.json()
   const { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
 
-
   if (mobile && !validateMobile(mobile)) {
     return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
   }
 
+  // Validate academic year if provided
+  if (academicYearId) {
+    const yearExists = await prisma.academicYear.findUnique({ where: { id: academicYearId } })
+    if (!yearExists) {
+      return NextResponse.json({ error: 'Invalid academic year' }, { status: 400 })
+    }
+  }
+
   const student = await prisma.student.update({
     where: { id },
-    data: { registerNumber, name, gender, mobile, departmentId, courseId },
-    include: { department: true, course: true },
+    data: {
+      registerNumber,
+      name,
+      gender,
+      mobile,
+      departmentId,
+      courseId,
+      academicYearId: academicYearId || null,
+    },
+    include: { department: true, course: true, academicYear: true },
   })
   return NextResponse.json(student)
 }

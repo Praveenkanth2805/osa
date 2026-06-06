@@ -21,22 +21,29 @@ export default function PaymentsPage() {
   }, [])
 
   const fetchData = async () => {
-    try {
-      const [paymentsRes, deptsRes, yearsRes] = await Promise.all([
-        fetch('/api/payments'),
-        fetch('/api/departments'),
-        fetch('/api/academic-years'),
-      ])
-      setPayments(await paymentsRes.json())
-      setFilteredPayments(await paymentsRes.json())
-      setDepartments(await deptsRes.json())
-      setAcademicYears(await yearsRes.json())
-    } catch (error) {
-      showToast('Failed to load data', 'error')
-    } finally {
-      setLoading(false)
+  try {
+    const [paymentsRes, deptsRes, yearsRes] = await Promise.all([
+      fetch('/api/payments'),
+      fetch('/api/departments'),
+      fetch('/api/academic-years'),
+    ])
+    
+    if (!paymentsRes.ok) {
+      const errorData = await paymentsRes.json()
+      throw new Error(errorData.error || 'Failed to load payments')
     }
+    
+    const paymentsData = await paymentsRes.json()
+    setPayments(paymentsData)
+    setFilteredPayments(paymentsData)
+    setDepartments(await deptsRes.json())
+    setAcademicYears(await yearsRes.json())
+  } catch (error) {
+    showToast(error.message, 'error')
+  } finally {
+    setLoading(false)
   }
+}
 
   const applyFilters = () => {
     let filtered = [...payments]
