@@ -78,4 +78,6 @@ export interface DashboardStats {
     collection: number
   }>
   recentPayments: Array<Payment & { student: Student }>
+  academicYearId?: string
+  academicYear?: AcademicYear
 }

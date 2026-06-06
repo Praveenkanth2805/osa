@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import { Student, Department, Course } from '@/types'
+import { Student, Department, Course, AcademicYear } from '@/types'
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
@@ -12,6 +12,7 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [courses, setCourses] = useState<Course[]>([])
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
@@ -26,6 +27,7 @@ export default function StudentsPage() {
     mobile: '',
     departmentId: '',
     courseId: '',
+    academicYearId: '',
   })
   const { showToast } = useToast()
 
@@ -35,15 +37,17 @@ export default function StudentsPage() {
 
   const fetchData = async () => {
     try {
-      const [studentsRes, deptsRes, coursesRes] = await Promise.all([
+      const [studentsRes, deptsRes, coursesRes, yearsRes] = await Promise.all([
         fetch('/api/students'),
         fetch('/api/departments'),
         fetch('/api/courses'),
+        fetch('/api/academic-years'),
       ])
-      if (!studentsRes.ok || !deptsRes.ok || !coursesRes.ok) throw new Error()
+      if (!studentsRes.ok || !deptsRes.ok || !coursesRes.ok || !yearsRes.ok) throw new Error()
       setStudents(await studentsRes.json())
       setDepartments(await deptsRes.json())
       setCourses(await coursesRes.json())
+      setAcademicYears(await yearsRes.json())
     } catch (error) {
       showToast('Failed to load data', 'error')
     } finally {
@@ -99,6 +103,7 @@ export default function StudentsPage() {
       mobile: '',
       departmentId: '',
       courseId: '',
+      academicYearId: '',
     })
     setEditingStudent(null)
   }
@@ -112,27 +117,25 @@ export default function StudentsPage() {
       mobile: student.mobile,
       departmentId: student.departmentId,
       courseId: student.courseId,
+      academicYearId: student.academicYearId || '',
     })
     setShowModal(true)
   }
 
   if (loading) return <LoadingSpinner />
 
+  // Get current academic year for default selection
+  const currentYear = academicYears.find(y => y.isCurrent)
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Students</h1>
         <div className="flex gap-3">
-          <Link
-            href="/admin/students/import"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
+          <Link href="/admin/students/import" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
             Import Excel
           </Link>
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-primary"
-          >
+          <button onClick={() => setShowModal(true)} className="btn-primary">
             Add Student
           </button>
         </div>
@@ -142,13 +145,14 @@ export default function StudentsPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Register No</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Register No</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Academic Year</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mobile</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -158,6 +162,7 @@ export default function StudentsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.department?.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.course?.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.academicYear?.year || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.mobile}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {student.isArchived ? (
@@ -180,47 +185,56 @@ export default function StudentsPage() {
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Student Modal with Academic Year Dropdown */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">{editingStudent ? 'Edit Student' : 'Add Student'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Register Number *</label>
-                  <input type="text" required value={formData.registerNumber} onChange={(e) => setFormData({ ...formData, registerNumber: e.target.value })} className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name *</label>
-                  <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Gender *</label>
-                  <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })} className="input-field">
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Mobile *</label>
-                  <input type="tel" required pattern="[0-9]{10}" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Department *</label>
-                  <select required value={formData.departmentId} onChange={(e) => setFormData({ ...formData, departmentId: e.target.value, courseId: '' })} className="input-field">
-                    <option value="">Select Department</option>
-                    {departments.map((dept) => (<option key={dept.id} value={dept.id}>{dept.name}</option>))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Course *</label>
-                  <select required value={formData.courseId} onChange={(e) => setFormData({ ...formData, courseId: e.target.value })} className="input-field">
-                    <option value="">Select Course</option>
-                    {courses.filter(c => c.departmentId === formData.departmentId).map((course) => (<option key={course.id} value={course.id}>{course.name} - ₹{course.fee}</option>))}
-                  </select>
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Register Number *</label>
+                <input type="text" required value={formData.registerNumber} onChange={(e) => setFormData({ ...formData, registerNumber: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Name *</label>
+                <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Gender *</label>
+                <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })} className="input-field">
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Mobile *</label>
+                <input type="tel" required pattern="[0-9]{10}" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Department *</label>
+                <select required value={formData.departmentId} onChange={(e) => setFormData({ ...formData, departmentId: e.target.value, courseId: '' })} className="input-field">
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (<option key={dept.id} value={dept.id}>{dept.name}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Course *</label>
+                <select required value={formData.courseId} onChange={(e) => setFormData({ ...formData, courseId: e.target.value })} className="input-field">
+                  <option value="">Select Course</option>
+                  {courses.filter(c => c.departmentId === formData.departmentId).map((course) => (<option key={course.id} value={course.id}>{course.name} - ₹{course.fee}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Academic Year *</label>
+                <select required value={formData.academicYearId} onChange={(e) => setFormData({ ...formData, academicYearId: e.target.value })} className="input-field">
+                  <option value="">Select Academic Year</option>
+                  {academicYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.year} {year.isCurrent && '(Current)'}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="btn-secondary">Cancel</button>
@@ -231,7 +245,7 @@ export default function StudentsPage() {
         </div>
       )}
 
-      <ConfirmDialog isOpen={deleteConfirm.isOpen} title="Delete Student" message="Are you sure you want to delete this student?" onConfirm={handleDelete} onCancel={() => setDeleteConfirm({ isOpen: false, studentId: '' })} />
+      <ConfirmDialog isOpen={deleteConfirm.isOpen} title="Delete Student" message="Are you sure?" onConfirm={handleDelete} onCancel={() => setDeleteConfirm({ isOpen: false, studentId: '' })} />
     </div>
   )
 }

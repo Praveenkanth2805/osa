@@ -65,6 +65,8 @@ model Student {
   course         Course     @relation(fields: [courseId], references: [id])
   payments       Payment[]
   @@map("students")
+  academicYearId String?   @map("academic_year_id")
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
 }
 
 model AcademicYear {
@@ -76,6 +78,7 @@ model AcademicYear {
   createdAt DateTime @default(now()) @map("created_at")
 
   payments  Payment[]
+  students  Student[]  
   @@map("academic_years")
 }
 

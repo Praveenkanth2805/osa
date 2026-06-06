@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { registerNumber, name, gender, mobile, departmentId, courseId } = body
+  const { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+
 
   if (!validateMobile(mobile)) {
     return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
@@ -53,6 +54,8 @@ export async function POST(req: NextRequest) {
       mobile,
       departmentId,
       courseId,
+      academicYearId: academicYearId || null
+
     },
     include: { department: true, course: true },
   })
@@ -68,7 +71,8 @@ export async function PUT(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
   const body = await req.json()
-  const { registerNumber, name, gender, mobile, departmentId, courseId } = body
+  const { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+
 
   if (mobile && !validateMobile(mobile)) {
     return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
