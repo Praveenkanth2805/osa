@@ -116,7 +116,7 @@ if (fs.existsSync(logoPath)) {
   y -= 15
   page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: margin + 500, y: y + 5 }, thickness: 1, color: rgb(0, 0, 0) })
   y -= 20
-  page.drawText(`Tuition Fee - ${payment.student.course?.name}`, { x: margin, y, size: 10, font })
+  page.drawText(`Alumni Association Fee - ${payment.student.course?.name}`, { x: margin, y, size: 10, font })
   page.drawText(`${payment.amount}`, { x: margin + 350, y, size: 10, font })
   y -= 20
   page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: margin + 500, y: y + 5 }, thickness: 1, color: rgb(0, 0, 0) })

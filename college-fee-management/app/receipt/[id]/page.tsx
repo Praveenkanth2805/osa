@@ -139,7 +139,7 @@ export default function ReceiptPage() {
                   </thead>
                   <tbody>
                     <tr className="border-b border-gray-100">
-                      <td className="px-4 py-3 text-sm">Tuition Fee - {payment.student.course?.name}</td>
+                      <td className="px-4 py-3 text-sm">Alumni Association Fee - {payment.student.course?.name}</td>
                       <td className="px-4 py-3 text-right text-sm">{payment.amount.toLocaleString()}</td>
                     </tr>
                     <tr className="bg-gray-50 font-semibold">
