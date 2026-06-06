@@ -1,0 +1,97 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { validateMobile } from '@/lib/utils'
+
+export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const departmentId = searchParams.get('departmentId')
+  const isArchived = searchParams.get('isArchived') === 'true'
+  
+  const where: any = { isArchived }
+  if (session.user.role !== 'ADMIN') {
+    where.departmentId = session.user.departmentId
+  } else if (departmentId) {
+    where.departmentId = departmentId
+  }
+
+  const students = await prisma.student.findMany({
+    where,
+    include: { department: true, course: true, payments: true },
+    orderBy: { createdAt: 'desc' },
+  })
+  return NextResponse.json(students)
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json()
+  const { registerNumber, name, gender, mobile, departmentId, courseId } = body
+
+  if (!validateMobile(mobile)) {
+    return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
+  }
+
+  const existing = await prisma.student.findUnique({
+    where: { registerNumber },
+  })
+  if (existing) {
+    return NextResponse.json({ error: 'Register number already exists' }, { status: 400 })
+  }
+
+  const student = await prisma.student.create({
+    data: {
+      registerNumber,
+      name,
+      gender,
+      mobile,
+      departmentId,
+      courseId,
+    },
+    include: { department: true, course: true },
+  })
+  return NextResponse.json(student, { status: 201 })
+}
+
+export async function PUT(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
+
+  const body = await req.json()
+  const { registerNumber, name, gender, mobile, departmentId, courseId } = body
+
+  if (mobile && !validateMobile(mobile)) {
+    return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
+  }
+
+  const student = await prisma.student.update({
+    where: { id },
+    data: { registerNumber, name, gender, mobile, departmentId, courseId },
+    include: { department: true, course: true },
+  })
+  return NextResponse.json(student)
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
+
+  await prisma.student.delete({ where: { id } })
+  return NextResponse.json({ success: true })
+}
