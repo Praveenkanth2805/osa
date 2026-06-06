@@ -49,9 +49,9 @@ export default function DepartmentPaymentsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Payment History</h1>
-        <Link href="/department/payments/new" className="btn-primary">
+        {/* <Link href="/department/payments/new" className="btn-primary">
           Make Payment
-        </Link>
+        </Link> */}
       </div>
 
       <div className="bg-white rounded-lg shadow p-4 mb-6">

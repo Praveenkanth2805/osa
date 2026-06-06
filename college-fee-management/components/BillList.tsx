@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { Student, AcademicYear, Payment, Department } from '@/types'
-import { EyeIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, CreditCardIcon } from '@heroicons/react/24/outline'
 
 interface BillListProps {
   role: 'ADMIN' | 'DEPARTMENT'
@@ -20,6 +20,9 @@ export default function BillList({ role }: BillListProps) {
   const [selectedYearId, setSelectedYearId] = useState('')
   const [payments, setPayments] = useState<Record<string, Payment>>({})
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [filters, setFilters] = useState({
     registerNo: '',
     studentName: '',
@@ -60,7 +63,6 @@ export default function BillList({ role }: BillListProps) {
         setDepartments(await deptsRes.json())
       }
       
-      // Set default to current academic year
       const currentYear = yearsData.find((y: AcademicYear) => y.isCurrent)
       if (currentYear) {
         setSelectedYearId(currentYear.id)
@@ -116,6 +118,43 @@ export default function BillList({ role }: BillListProps) {
 
   const handleViewReceipt = (paymentId: string) => {
     window.open(`/receipt/${paymentId}`, '_blank')
+  }
+
+  const handlePayClick = (student: Student) => {
+    setSelectedStudent(student)
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedStudent) return
+
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: selectedStudent.id,
+          academicYearId: selectedYearId,
+        }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Payment failed')
+      }
+      const payment = await res.json()
+      showToast('Payment successful!', 'success')
+      setShowPaymentModal(false)
+      // Refresh payment status
+      fetchPayments()
+      // Open receipt in new tab
+      window.open(`/receipt/${payment.id}`, '_blank')
+    } catch (error: any) {
+      showToast(error.message, 'error')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const clearFilters = () => {
@@ -232,7 +271,13 @@ export default function BillList({ role }: BillListProps) {
                         <EyeIcon className="w-5 h-5" />
                       </button>
                     ) : (
-                      <span className="text-gray-400 cursor-not-allowed">-</span>
+                      <button
+                        onClick={() => handlePayClick(student)}
+                        className="bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 text-sm flex items-center gap-1"
+                      >
+                        <CreditCardIcon className="w-4 h-4" />
+                        Pay Now
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -248,6 +293,39 @@ export default function BillList({ role }: BillListProps) {
           </tbody>
         </table>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Make Payment</h3>
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded">
+                <p><strong>Student:</strong> {selectedStudent.name}</p>
+                <p><strong>Register No:</strong> {selectedStudent.registerNumber}</p>
+                <p><strong>Course:</strong> {selectedStudent.course?.name}</p>
+                <p><strong>Fee Amount:</strong> ₹{selectedStudent.course?.fee}</p>
+                <p><strong>Academic Year:</strong> {academicYears.find(y => y.id === selectedYearId)?.year}</p>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePaymentSubmit}
+                  disabled={submitting}
+                  className="btn-primary"
+                >
+                  {submitting ? 'Processing...' : 'Confirm Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

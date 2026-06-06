@@ -68,103 +68,108 @@ export default function ReceiptPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-3xl mx-auto relative">
-        {/* Tamil Nadu Government Watermark */}
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center opacity-10 print:opacity-10">
-          <img src="/logos/tn-govt-logo.png" alt="Government of Tamil Nadu" className="w-96 h-auto" />
+        {/* Background Watermark - Tamil Nadu Government Logo */}
+        <div className="fixed inset-0 pointer-events-none flex items-center justify-center opacity-10 print:opacity-10 z-0">
+          <img src="/logos/tn-govt-logo.png" alt="Government of Tamil Nadu" className="w-80 h-auto" />
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8 print:shadow-none relative z-10">
-          {/* Header: Only College Logo on left */}
-          <div className="flex justify-between items-start border-b pb-4 mb-6">
-            <div>
-              <img src="/logos/college-logo.png" alt="College Logo" className="h-16 w-auto" />
+        {/* Receipt Card with Professional Margins */}
+        <div className="relative z-10 bg-white rounded-lg shadow-lg print:shadow-none overflow-hidden">
+          <div className="p-8 md:p-10">
+            {/* Header Section */}
+            <div className="flex justify-between items-start border-b border-gray-200 pb-6 mb-6">
+              <div className="flex-shrink-0">
+                <img src="/logos/college-logo.png" alt="College Logo" className="h-16 w-auto" />
+              </div>
+              <div className="text-center flex-1 px-4">
+                <h1 className="text-2xl font-bold text-gray-900">Arignar Anna Government Arts College</h1>
+                <p className="text-gray-600">Villupuram, Tamil Nadu</p>
+                <p className="text-sm text-gray-500">(Affiliated to Thiruvalluvar University)</p>
+              </div>
+              <div className="w-16"></div> {/* spacer */}
             </div>
-            <div className="text-center flex-1">
-              <h1 className="text-2xl font-bold text-gray-900">
-                Arignar Anna Government Arts College
-              </h1>
-              <p className="text-gray-600">Villupuram, Tamil Nadu</p>
-            </div>
-            {/* University logo removed */}
-            <div className="w-16"></div> {/* spacer for balance */}
-          </div>
 
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">FEE PAYMENT RECEIPT</h2>
-            <p className="text-sm text-gray-600">Original Copy</p>
-          </div>
-
-          {/* Receipt Details */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <p><strong>Receipt No:</strong> {payment.receiptNumber}</p>
-              <p><strong>Date:</strong> {new Date(payment.paymentDate).toLocaleDateString()}</p>
-              <p><strong>Academic Year:</strong> {payment.academicYear.year}</p>
+            {/* Title */}
+            <div className="text-center mb-8">
+              <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wide">Fee Payment Receipt</h2>
+              <p className="text-sm text-gray-500">Original Copy</p>
             </div>
-            <div className="text-right">
-              <div className="inline-block p-2 bg-gray-50 rounded">
-                {qrCodeUrl && <img src={qrCodeUrl} alt="QR Code" className="h-24 w-24" />}
+
+            {/* Receipt Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="space-y-2">
+                <p><span className="font-semibold">Receipt No:</span> {payment.receiptNumber}</p>
+                <p><span className="font-semibold">Date:</span> {new Date(payment.paymentDate).toLocaleDateString()}</p>
+                <p><span className="font-semibold">Academic Year:</span> {payment.academicYear.year}</p>
+              </div>
+              <div className="flex justify-end">
+                <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                  {qrCodeUrl && <img src={qrCodeUrl} alt="QR Code" className="h-24 w-24" />}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Student Details */}
-          <div className="border-t border-b py-4 mb-6">
-            <h3 className="font-semibold mb-3">Student Details</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p><strong>Register Number:</strong> {payment.student.registerNumber}</p>
-                <p><strong>Student Name:</strong> {payment.student.name}</p>
-                <p><strong>Gender:</strong> {payment.student.gender}</p>
-              </div>
-              <div>
-                <p><strong>Department:</strong> {payment.student.department?.name}</p>
-                <p><strong>Course:</strong> {payment.student.course?.name}</p>
-                <p><strong>Mobile:</strong> {payment.student.mobile}</p>
+            {/* Student Details Section */}
+            <div className="border-t border-b border-gray-200 py-6 mb-8">
+              <h3 className="font-semibold text-lg mb-4 text-gray-800">Student Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p><span className="font-medium">Register Number:</span> {payment.student.registerNumber}</p>
+                  <p><span className="font-medium">Student Name:</span> {payment.student.name}</p>
+                  <p><span className="font-medium">Gender:</span> {payment.student.gender}</p>
+                </div>
+                <div className="space-y-2">
+                  <p><span className="font-medium">Department:</span> {payment.student.department?.name}</p>
+                  <p><span className="font-medium">Course:</span> {payment.student.course?.name}</p>
+                  <p><span className="font-medium">Mobile:</span> {payment.student.mobile}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Payment Details */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-3">Payment Details</h3>
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left">Description</th>
-                  <th className="px-4 py-2 text-right">Amount (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="px-4 py-2">Alumni Association Fee - {payment.student.course?.name}</td>
-                  <td className="px-4 py-2 text-right">{payment.amount.toLocaleString()}</td>
-                </tr>
-                <tr className="border-t font-bold">
-                  <td className="px-4 py-2">Total</td>
-                  <td className="px-4 py-2 text-right">₹{payment.amount.toLocaleString()}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Footer */}
-          <div className="border-t pt-4 mt-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Amount in words: Rupees {payment.amount} only</p>
-                <p className="text-xs text-gray-500 mt-2">This is a computer generated receipt</p>
+            {/* Payment Details Table */}
+            <div className="mb-8">
+              <h3 className="font-semibold text-lg mb-4 text-gray-800">Payment Details</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-100">
+                      <td className="px-4 py-3 text-sm">Tuition Fee - {payment.student.course?.name}</td>
+                      <td className="px-4 py-3 text-right text-sm">{payment.amount.toLocaleString()}</td>
+                    </tr>
+                    <tr className="bg-gray-50 font-semibold">
+                      <td className="px-4 py-3 text-sm">Total</td>
+                      <td className="px-4 py-3 text-right text-sm">₹{payment.amount.toLocaleString()}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div className="text-right">
-                <p className="mt-8 pt-2 border-t border-gray-300">Authorized Signature</p>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 pt-6 mt-4">
+              <div className="flex flex-col md:flex-row justify-between gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Amount in words: Rupees {payment.amount} only</p>
+                  <p className="text-xs text-gray-500 mt-2">This is a computer generated receipt</p>
+                </div>
+                <div className="text-right">
+                  <p className="mt-8 pt-2 border-t border-gray-300 inline-block px-8">Authorized Signature</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div className="mt-6 flex justify-center gap-4 print:hidden">
-          <button onClick={handlePrint} className="btn-primary">Print Receipt</button>
-          <button onClick={handleDownloadPDF} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+          <button onClick={handlePrint} className="btn-primary px-6 py-2">Print Receipt</button>
+          <button onClick={handleDownloadPDF} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
             Download PDF
           </button>
         </div>
