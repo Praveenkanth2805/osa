@@ -49,9 +49,9 @@ export default function ImportStudentsPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Excel File (.xlsx)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Excel or CSV File (.xlsx or .csv)</label>
             <input type="file" accept=".xlsx, .xls, .csv" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-full" required />
-            <p className="text-xs text-gray-500 mt-1">Required columns: Register Number, Name, Gender, Mobile, Department Code, Course Code</p>
+            <p className="text-xs text-gray-500 mt-1">Required columns: Register Number, Name, Gender, Mobile, Department Code, Course Code, Academic Year</p>
           </div>
           {errors.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded p-4">
