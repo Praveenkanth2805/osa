@@ -86,13 +86,16 @@ export default function StudentsPage() {
       const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, {
         method: 'DELETE',
       })
-      if (!res.ok) throw new Error('Failed to delete student')
+      if (!res.ok) {
+  const err = await res.json()
+  throw new Error(err.error || 'Failed to delete student')
+}
       showToast('Student deleted successfully', 'success')
       setDeleteConfirm({ isOpen: false, studentId: '' })
       fetchData()
-    } catch (error) {
-      showToast('Failed to delete student', 'error')
-    }
+    } catch (error: any) {
+  showToast(error.message, 'error')
+}
   }
 
   const resetForm = () => {

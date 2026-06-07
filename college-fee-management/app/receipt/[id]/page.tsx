@@ -84,7 +84,6 @@ export default function ReceiptPage() {
               <div className="text-center flex-1 px-4">
                 <h1 className="text-2xl font-bold text-gray-900">Arignar Anna Government Arts College</h1>
                 <p className="text-gray-600">Villupuram, Tamil Nadu</p>
-                <p className="text-sm text-gray-500">(Affiliated to Thiruvalluvar University)</p>
               </div>
               <div className="w-16"></div> {/* spacer */}
             </div>
