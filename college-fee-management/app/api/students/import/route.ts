@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = await file.arrayBuffer()
-  const workbook = XLSX.read(buffer, { type: 'buffer' })
+  const workbook = XLSX.read(buffer, { type: 'array' })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows: any[] = XLSX.utils.sheet_to_json(sheet)
 
@@ -28,14 +28,20 @@ export async function POST(req: NextRequest) {
   const departments = await prisma.department.findMany()
   const courses = await prisma.course.findMany()
   const academicYears = await prisma.academicYear.findMany()
-
-  const departmentMap = new Map(departments.map(d => [d.code, d.id]))
-  const courseMap = new Map(courses.map(c => [c.code, c.id]))
+ 
+  const departmentMap = new Map(
+  departments.map(d => [String(d.code).trim(), d.id])
+)
+  const courseMap = new Map(
+  courses.map(c => [String(c.code).trim(), c.id])
+)
   const yearMap = new Map(academicYears.map(y => [y.year, y.id]))
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
-    const registerNumber = row['Register Number'] || row['registerNumber']
+    const registerNumber = String(
+  row['Register Number'] || row['registerNumber'] || ''
+).trim()
     const name = row['Name'] || row['name']
     const gender = (row['Gender'] || row['gender'] || 'MALE').toUpperCase()
     const mobile = String(row['Mobile'] || row['mobile'] || '')
@@ -62,14 +68,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate department
-    const departmentId = departmentMap.get(departmentCode)
+    const departmentId = departmentMap.get(
+  String(departmentCode).trim()
+)
     if (!departmentId) {
       errors.push(`Row ${i + 2}: Invalid Department Code (${departmentCode})`)
       continue
     }
 
     // Validate course
-    const courseId = courseMap.get(courseCode)
+    const courseId = courseMap.get(
+  String(courseCode).trim()
+)
     if (!courseId) {
       errors.push(`Row ${i + 2}: Invalid Course Code (${courseCode})`)
       continue
@@ -103,8 +113,9 @@ export async function POST(req: NextRequest) {
 
     // Check duplicate register number
     const existing = await prisma.student.findUnique({
-      where: { registerNumber }
-    })
+  where: { registerNumber }
+})
+
     if (existing) {
       errors.push(`Row ${i + 2}: Duplicate Register Number (${registerNumber})`)
       continue
@@ -127,10 +138,17 @@ export async function POST(req: NextRequest) {
   }
 
   // Bulk insert students
+
+console.log('====================')
+console.log('File Name:', file.name)
+console.log('Sheet Names:', workbook.SheetNames)
+console.log('Rows Count:', rows.length)
+console.log('First Row:', rows[0])
+console.log('All Rows:', rows)
+console.log('====================')
   try {
     await prisma.student.createMany({
       data: students,
-      skipDuplicates: true,
     })
     return NextResponse.json({ imported: students.length, errors: [] })
   } catch (error: any) {
