@@ -61,7 +61,7 @@ export default function AcademicYearsPage() {
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">{editingYear ? 'Edit' : 'Add'} Academic Year</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div><label className="block text-sm font-medium">Year (e.g., 2025-26)</label><input type="text" required value={formData.year} onChange={(e) => setFormData({ ...formData, year: e.target.value })} className="input-field" /></div>
+              <div><label className="block text-sm font-medium">Year (e.g., 2023-26)</label><input type="text" required value={formData.year} onChange={(e) => setFormData({ ...formData, year: e.target.value })} className="input-field" /></div>
               <div><label>Start Year</label><input type="number" required value={formData.startYear} onChange={(e) => setFormData({ ...formData, startYear: parseInt(e.target.value), year: `${e.target.value}-${(parseInt(e.target.value)+1).toString().slice(-2)}` })} className="input-field" /></div>
               <div><label>End Year</label><input type="number" required value={formData.endYear} onChange={(e) => setFormData({ ...formData, endYear: parseInt(e.target.value) })} className="input-field" /></div>
               <div><label className="flex items-center"><input type="checkbox" checked={formData.isCurrent} onChange={(e) => setFormData({ ...formData, isCurrent: e.target.checked })} className="mr-2" /> Set as Current Academic Year</label></div>
