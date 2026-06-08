@@ -85,7 +85,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const pdfDoc = await PDFDocument.create()
   const page = pdfDoc.addPage(PageSizes.A4.landscape)
-  const { width, height } = page
+const width = page.getWidth()
+const height = page.getHeight()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
@@ -135,6 +136,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       const logoDims = logo.scale(0.4)
       page.drawImage(logo, { x: xOffset + 20, y: y - 30, width: logoDims.width, height: logoDims.height })
     }
+    
 
     // Header text
     page.drawText('Arignar Anna Government Arts College', { x: xOffset + 80, y, size: 12, font: boldFont })
@@ -174,7 +176,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     page.drawText('Payment Details', { x: xOffset + 20, y, size: 10, font: boldFont })
     y -= 18
     page.drawText('Description', { x: xOffset + 20, y, size: 9, font: boldFont })
-    page.drawText('Amount (₹)', { x: xOffset + 220, y, size: 9, font: boldFont })
+    page.drawText('Amount (Rs.)', { x: xOffset + 220, y, size: 9, font: boldFont })
     y -= 15
     page.drawLine({ start: { x: xOffset + 20, y: y+3 }, end: { x: xOffset + 260, y: y+3 }, thickness: 0.5, color: rgb(0,0,0) })
     y -= 18
@@ -184,7 +186,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     page.drawLine({ start: { x: xOffset + 20, y: y+3 }, end: { x: xOffset + 260, y: y+3 }, thickness: 0.5, color: rgb(0,0,0) })
     y -= 18
     page.drawText('Total', { x: xOffset + 20, y, size: 9, font: boldFont })
-    page.drawText(`₹${payment.amount.toLocaleString()}`, { x: xOffset + 220, y, size: 9, font: boldFont })
+    page.drawText(`Rs.${payment.amount.toLocaleString()}`, { x: xOffset + 220, y, size: 9, font: boldFont })
     y -= 22
     const words = numberToWords(payment.amount)
     page.drawText(`Amount in words: ${words} only`, { x: xOffset + 20, y, size: 8, font })

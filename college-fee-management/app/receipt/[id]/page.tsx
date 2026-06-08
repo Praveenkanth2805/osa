@@ -89,11 +89,11 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
           {/* Row: Receipt details (left) + QR (right) */}
           <div className="flex justify-between items-start">
             <div className="grid grid-cols-[120px_1fr] gap-x-2 gap-y-1 text-sm">
-              <span className="font-medium">Receipt No:</span>
-              <span>{payment.receiptNumber}</span>
-              <span className="font-medium">Date:</span>
+              <span className="font-bold">Date:</span>
               <span>{new Date(payment.paymentDate).toLocaleDateString()}</span>
-              <span className="font-medium">Academic Year:</span>
+              <span className="font-bold">Receipt No:</span>
+              <span>{payment.receiptNumber}</span>
+              <span className="font-bold">Academic Year:</span>
               <span>{payment.academicYear.year}</span>
             </div>
             <div className="bg-gray-50 p-1 rounded border">
@@ -105,17 +105,17 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
           <div className="border-t pt-2">
             <p className="font-semibold mb-2">Student Details</p>
             <div className="grid grid-cols-[120px_1fr_120px_1fr] gap-x-2 gap-y-1 text-sm">
-              <span className="font-medium">Roll No:</span>
+              <span className="font-bold">Roll No:</span>
               <span>{payment.student.registerNumber}</span>
-              <span className="font-medium">Name:</span>
+              <span className="font-bold">Name:</span>
               <span>{payment.student.name}</span>
-              <span className="font-medium">Gender:</span>
+              <span className="font-bold">Gender:</span>
               <span>{payment.student.gender}</span>
-              <span className="font-medium">Course:</span>
+              <span className="font-bold">Course:</span>
               <span>{payment.student.course?.name}</span>
-              <span className="font-medium">Dept:</span>
+              <span className="font-bold">Dept:</span>
               <span>{payment.student.department?.name}</span>
-              <span className="font-medium">Mobile:</span>
+              <span className="font-bold">Mobile:</span>
               <span>{payment.student.mobile}</span>
             </div>
           </div>
@@ -238,9 +238,9 @@ export default function ReceiptPage() {
         {/* Action buttons */}
         <div className="mt-6 flex justify-center gap-4 print:hidden">
           <button onClick={handlePrint} className="btn-primary px-6 py-2">Print Receipt</button>
-          <button onClick={handleDownloadPDF} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+          {/* <button onClick={handleDownloadPDF} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
             Download PDF
-          </button>
+          </button> */}
         </div>
       </div>
 
