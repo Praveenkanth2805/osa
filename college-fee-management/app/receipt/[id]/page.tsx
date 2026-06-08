@@ -140,7 +140,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
                   <td className="text-right px-2 py-1">₹{payment.amount.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td colSpan={2} className="text-xs text-gray-600 pt-2 px-2">
+                  <td colSpan={2} className="text-right text-xs text-gray-600 pt-2 px-2">
                     Amount in words: {amountInWords} only
                   </td>
                 </tr>
@@ -151,7 +151,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
 
         {/* Footer */}
         <div className="border-t mt-4 pt-2 text-right text-xs">
-          <span className="border-t border-gray-400 inline-block pt-1 px-4">Authorized Signature</span>
+          <span className="border-t mt-12 border-gray-400 inline-block pt-1 px-4">Authorized Signature</span>
         </div>
       </div>
     </div>
