@@ -43,11 +43,11 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
         <div>
           <h2 className="text-center text-3xl font-bold text-gray-900">
-            Fee Management System
+            Arignar Anna Government Arts College, Villupuram 
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Arignar Anna Government Arts College, Villupuram
-          </p>
+          <h3 className="mt-2 text-3xl font-bold text-center text-sm text-gray-600 textcolor-blue">
+            OLD STDUDENT ASSOCIATION
+          </h3>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

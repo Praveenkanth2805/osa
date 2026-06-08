@@ -1,19 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, PageSizes } from 'pdf-lib'
 import QRCode from 'qrcode'
 import fs from 'fs'
 import path from 'path'
 
-function embedSafeImage(pdfDoc: any, bytes: Buffer) {
-  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50
-  return isPng ? pdfDoc.embedPng(bytes) : pdfDoc.embedJpg(bytes)
+// Number to words function (same as before)
+function numberToWords(num: number): string {
+  if (num === 0) return 'Zero'
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']
+
+  function convertBelowThousand(n: number): string {
+    let str = ''
+    const hundred = Math.floor(n / 100)
+    const remainder = n % 100
+    if (hundred > 0) {
+      str += ones[hundred] + ' Hundred'
+      if (remainder > 0) str += ' '
+    }
+    if (remainder >= 20) {
+      str += tens[Math.floor(remainder / 10)]
+      const unit = remainder % 10
+      if (unit > 0) str += ' ' + ones[unit]
+    } else if (remainder >= 10) {
+      str += teens[remainder - 10]
+    } else if (remainder > 0) {
+      str += ones[remainder]
+    }
+    return str.trim()
+  }
+
+  let result = ''
+  const crore = Math.floor(num / 10000000)
+  const lakh = Math.floor((num % 10000000) / 100000)
+  const thousand = Math.floor((num % 100000) / 1000)
+  const remainder = num % 1000
+  if (crore > 0) {
+    result += convertBelowThousand(crore) + ' Crore'
+    if (lakh > 0 || thousand > 0 || remainder > 0) result += ' '
+  }
+  if (lakh > 0) {
+    result += convertBelowThousand(lakh) + ' Lakh'
+    if (thousand > 0 || remainder > 0) result += ' '
+  }
+  if (thousand > 0) {
+    result += convertBelowThousand(thousand) + ' Thousand'
+    if (remainder > 0) result += ' '
+  }
+  if (remainder > 0) {
+    result += convertBelowThousand(remainder)
+  }
+  return result.trim()
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Helper to safely embed image (returns null on failure)
+async function safeEmbedImage(pdfDoc: PDFDocument, filePath: string) {
+  try {
+    if (!fs.existsSync(filePath)) return null
+    const buffer = fs.readFileSync(filePath)
+    // Try to embed as PNG, fallback to JPEG if needed
+    try {
+      return await pdfDoc.embedPng(buffer)
+    } catch {
+      return await pdfDoc.embedJpg(buffer)
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const payment = await prisma.payment.findUnique({
     where: { id: params.id },
     include: {
@@ -21,111 +79,41 @@ export async function GET(
       academicYear: true,
     },
   })
-
   if (!payment) {
     return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
   }
 
   const pdfDoc = await PDFDocument.create()
-  const page = pdfDoc.addPage([595, 842]) // A4
+  const page = pdfDoc.addPage(PageSizes.A4.landscape)
+  const { width, height } = page
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-  // Add Tamil Nadu Government Watermark (centered)
-  const watermarkPath = path.join(process.cwd(), 'public/logos/tn-govt-logo.png')
+  // Watermark (safe)
+  const watermark = await safeEmbedImage(pdfDoc, path.join(process.cwd(), 'public/logos/tn-govt-logo.png'))
+  if (watermark) {
+    const { width: w, height: h } = watermark.scale(0.3)
+    page.drawImage(watermark, {
+      x: (width - w) / 2,
+      y: (height - h) / 2,
+      width: w,
+      height: h,
+      opacity: 0.1,
+    })
+  }
 
-if (fs.existsSync(watermarkPath)) {
-  const watermarkBytes = fs.readFileSync(watermarkPath)
-
-  const isPng =
-    watermarkBytes[0] === 0x89 && watermarkBytes[1] === 0x50
-
-  const watermarkImage = isPng
-    ? await pdfDoc.embedPng(watermarkBytes)
-    : await pdfDoc.embedJpg(watermarkBytes)
-
-  const pageWidth = page.getWidth()
-  const pageHeight = page.getHeight()
-
-  const wmWidth = 320
-  const wmHeight =
-    (watermarkImage.height / watermarkImage.width) * wmWidth
-
-  page.drawImage(watermarkImage, {
-    x: (pageWidth - wmWidth) / 2,
-    y: (pageHeight - wmHeight) / 2,
-    width: wmWidth,
-    height: wmHeight,
-    opacity: 0.06, // government challan style light watermark
+  // Vertical dashed line in middle
+  const midX = width / 2
+  page.drawLine({
+    start: { x: midX, y: 50 },
+    end: { x: midX, y: height - 50 },
+    thickness: 1,
+    color: rgb(0.5, 0.5, 0.5),
+    opacity: 0.6,
+    dashArray: [5, 5],
   })
-}
 
-  // Professional margins (50 points from each edge)
-  const margin = 50
-  let y = page.getHeight() - margin
-
-  // College Logo
-  const logoPath = path.join(process.cwd(), 'public/logos/college-logo.png')
-
-if (fs.existsSync(logoPath)) {
-  const logoBytes = fs.readFileSync(logoPath)
-
-  const logoImage = await embedSafeImage(pdfDoc, logoBytes)
-
-  page.drawImage(logoImage, {
-    x: margin,
-    y: y - 30,
-    width: 60,
-    height: 60,
-  })
-}
-
-  // Header Text
-  page.drawText('Arignar Anna Government Arts College', { x: margin + 80, y, size: 16, font: boldFont })
-  y -= 20
-  page.drawText('Villupuram, Tamil Nadu', { x: margin + 80, y, size: 11, font })
-  y -= 25
-  page.drawText('FEE PAYMENT RECEIPT', { x: margin + 80, y, size: 13, font: boldFont })
-  y -= 45
-
-  // Receipt Details
-  page.drawText(`Receipt No: ${payment.receiptNumber}`, { x: margin, y, size: 10, font })
-  page.drawText(`Date: ${new Date(payment.paymentDate).toLocaleDateString()}`, { x: margin + 250, y, size: 10, font })
-  y -= 20
-  page.drawText(`Academic Year: ${payment.academicYear.year}`, { x: margin, y, size: 10, font })
-  y -= 35
-
-  // Student Details
-  page.drawText('Student Details', { x: margin, y, size: 12, font: boldFont })
-  y -= 20
-  page.drawText(`Register No: ${payment.student.registerNumber}`, { x: margin, y, size: 10, font })
-  page.drawText(`Name: ${payment.student.name}`, { x: margin + 250, y, size: 10, font })
-  y -= 18
-  page.drawText(`Gender: ${payment.student.gender}`, { x: margin, y, size: 10, font })
-  page.drawText(`Mobile: ${payment.student.mobile}`, { x: margin + 250, y, size: 10, font })
-  y -= 18
-  page.drawText(`Department: ${payment.student.department?.name}`, { x: margin, y, size: 10, font })
-  page.drawText(`Course: ${payment.student.course?.name}`, { x: margin + 250, y, size: 10, font })
-  y -= 35
-
-  // Payment Table Header
-  page.drawText('Payment Details', { x: margin, y, size: 12, font: boldFont })
-  y -= 20
-  page.drawText('Description', { x: margin, y, size: 10, font: boldFont })
-  page.drawText('Amount (Rs.)', { x: margin + 350, y, size: 10, font: boldFont })
-  y -= 15
-  page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: margin + 500, y: y + 5 }, thickness: 1, color: rgb(0, 0, 0) })
-  y -= 20
-  page.drawText(`Alumni Association Fee - ${payment.student.course?.name}`, { x: margin, y, size: 10, font })
-  page.drawText(`${payment.amount}`, { x: margin + 350, y, size: 10, font })
-  y -= 20
-  page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: margin + 500, y: y + 5 }, thickness: 1, color: rgb(0, 0, 0) })
-  y -= 20
-  page.drawText('Total', { x: margin, y, size: 10, font: boldFont })
-  page.drawText(`${payment.amount}`, { x: margin + 350, y, size: 10, font: boldFont })
-  y -= 40
-
-  // QR Code
+  // QR code generation (shared for both copies)
   const qrData = JSON.stringify({
     receiptNo: payment.receiptNumber,
     studentName: payment.student.name,
@@ -134,14 +122,81 @@ if (fs.existsSync(logoPath)) {
     date: new Date(payment.paymentDate).toLocaleDateString(),
     academicYear: payment.academicYear.year,
   })
-  const qrImage = await QRCode.toBuffer(qrData, { width: 100, margin: 1 })
-  const qrImageEmbed = await pdfDoc.embedPng(qrImage)
-  page.drawImage(qrImageEmbed, { x: margin + 450, y: y - 80, width: 80, height: 80 })
+  const qrBuffer = await QRCode.toBuffer(qrData, { width: 80, margin: 1 })
+  const qrImage = await pdfDoc.embedPng(qrBuffer)
 
-  // Footer
-  page.drawText(`Amount in words: Rupees ${payment.amount} only`, { x: margin, y: margin + 50, size: 9, font })
-  page.drawText('This is a computer generated receipt', { x: margin, y: margin + 35, size: 8, font })
-  page.drawText('Authorized Signature', { x: margin + 450, y: margin + 35, size: 9, font })
+  // Helper to draw a receipt card at given x offset
+  async function drawReceipt(xOffset: number, copyLabel: string) {
+    let y = height - 70
+
+    // College Logo (safe)
+    const logo = await safeEmbedImage(pdfDoc, path.join(process.cwd(), 'public/logos/college-logo.png'))
+    if (logo) {
+      const logoDims = logo.scale(0.4)
+      page.drawImage(logo, { x: xOffset + 20, y: y - 30, width: logoDims.width, height: logoDims.height })
+    }
+
+    // Header text
+    page.drawText('Arignar Anna Government Arts College', { x: xOffset + 80, y, size: 12, font: boldFont })
+    y -= 18
+    page.drawText('Villupuram-605602', { x: xOffset + 80, y, size: 10, font })
+    y -= 18
+    page.drawText("Old Student's Association", { x: xOffset + 80, y, size: 11, font: boldFont })
+    y -= 25
+    page.drawText('PAYMENT RECEIPT', { x: xOffset + 80, y, size: 12, font: boldFont })
+    y -= 15
+    page.drawText(copyLabel, { x: xOffset + 80, y, size: 10, font })
+    y -= 30
+
+    // Receipt No, Date and QR code (moved to top)
+    page.drawText(`Receipt No: ${payment.receiptNumber}`, { x: xOffset + 20, y, size: 9, font })
+    page.drawText(`Date: ${new Date(payment.paymentDate).toLocaleDateString()}`, { x: xOffset + 200, y, size: 9, font })
+    // Place QR code at top-right of the card
+    page.drawImage(qrImage, { x: xOffset + width/2 - 70, y: y - 5, width: 40, height: 40 })
+    y -= 18
+    page.drawText(`Academic Year: ${payment.academicYear.year}`, { x: xOffset + 20, y, size: 9, font })
+    y -= 30
+
+    // Student Details
+    page.drawText('Student Details', { x: xOffset + 20, y, size: 10, font: boldFont })
+    y -= 18
+    page.drawText(`Roll No: ${payment.student.registerNumber}`, { x: xOffset + 20, y, size: 9, font })
+    page.drawText(`Name: ${payment.student.name}`, { x: xOffset + 200, y, size: 9, font })
+    y -= 16
+    page.drawText(`Gender: ${payment.student.gender}`, { x: xOffset + 20, y, size: 9, font })
+    page.drawText(`Course: ${payment.student.course?.name}`, { x: xOffset + 200, y, size: 9, font })
+    y -= 16
+    page.drawText(`Dept: ${payment.student.department?.name}`, { x: xOffset + 20, y, size: 9, font })
+    page.drawText(`Mobile: ${payment.student.mobile}`, { x: xOffset + 200, y, size: 9, font })
+    y -= 30
+
+    // Payment table
+    page.drawText('Payment Details', { x: xOffset + 20, y, size: 10, font: boldFont })
+    y -= 18
+    page.drawText('Description', { x: xOffset + 20, y, size: 9, font: boldFont })
+    page.drawText('Amount (₹)', { x: xOffset + 220, y, size: 9, font: boldFont })
+    y -= 15
+    page.drawLine({ start: { x: xOffset + 20, y: y+3 }, end: { x: xOffset + 260, y: y+3 }, thickness: 0.5, color: rgb(0,0,0) })
+    y -= 18
+    page.drawText('Alumni Association Fee', { x: xOffset + 20, y, size: 9, font })
+    page.drawText(payment.amount.toLocaleString(), { x: xOffset + 220, y, size: 9, font })
+    y -= 18
+    page.drawLine({ start: { x: xOffset + 20, y: y+3 }, end: { x: xOffset + 260, y: y+3 }, thickness: 0.5, color: rgb(0,0,0) })
+    y -= 18
+    page.drawText('Total', { x: xOffset + 20, y, size: 9, font: boldFont })
+    page.drawText(`₹${payment.amount.toLocaleString()}`, { x: xOffset + 220, y, size: 9, font: boldFont })
+    y -= 22
+    const words = numberToWords(payment.amount)
+    page.drawText(`Amount in words: ${words} only`, { x: xOffset + 20, y, size: 8, font })
+
+    // Signature at bottom
+    page.drawText('Authorized Signature', { x: xOffset + 200, y: 45, size: 8, font })
+  }
+
+  // Draw left copy (College)
+  await drawReceipt(40, 'College Copy')
+  // Draw right copy (Student)
+  await drawReceipt(width/2 + 20, 'Student Copy')
 
   const pdfBytes = await pdfDoc.save()
   return new NextResponse(pdfBytes, {

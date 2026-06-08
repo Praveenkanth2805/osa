@@ -6,9 +6,8 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
-export function generateReceiptNumber(academicYear: string, sequence: number): string {
-  const yearPart = academicYear.replace('-', '')
-  return `REC-${yearPart}-${String(sequence).padStart(4, '0')}`
+export function generateReceiptNumber(sequence: number): string {
+  return String(sequence).padStart(5, '0')
 }
 
 export function validateMobile(mobile: string): boolean {

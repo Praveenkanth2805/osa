@@ -65,14 +65,14 @@ export async function POST(req: NextRequest) {
 
     // Get next receipt number sequence
     const lastPayment = await prisma.payment.findFirst({
-      orderBy: { receiptNumber: 'desc' },
-    })
-    let sequence = 1
-    if (lastPayment) {
-      const match = lastPayment.receiptNumber.match(/\d+$/)
-      if (match) sequence = parseInt(match[0]) + 1
-    }
-    const receiptNumber = generateReceiptNumber(academicYear.year, sequence)
+  orderBy: { receiptNumber: 'desc' },
+})
+let sequence = 1
+if (lastPayment) {
+  const seqNum = parseInt(lastPayment.receiptNumber, 10)
+  if (!isNaN(seqNum)) sequence = seqNum + 1
+}
+const receiptNumber = generateReceiptNumber(sequence)
 
     const payment = await prisma.payment.create({
       data: {
