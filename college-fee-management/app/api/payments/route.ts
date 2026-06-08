@@ -72,7 +72,7 @@ if (lastPayment) {
   const seqNum = parseInt(lastPayment.receiptNumber, 10)
   if (!isNaN(seqNum)) sequence = seqNum + 1
 }
-const receiptNumber = generateReceiptNumber(sequence)
+const receiptNumber = generateReceiptNumber()
 
     const payment = await prisma.payment.create({
       data: {
