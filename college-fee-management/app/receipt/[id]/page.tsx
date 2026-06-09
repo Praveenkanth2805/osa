@@ -90,7 +90,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
           <div className="flex justify-between items-start">
             <div className="grid grid-cols-[120px_1fr] gap-x-2 gap-y-1 text-sm">
               <span className="font-bold">Receipt No:</span>
-              <span>{payment.receiptNumber}</span>
+              <span>{payment.receiptNumber.split('-')[1]}</span>
               <span className="font-bold">Date:</span>
               <span>{new Date(payment.paymentDate).toLocaleDateString()}</span>
             </div>

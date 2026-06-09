@@ -64,15 +64,28 @@ export async function POST(req: NextRequest) {
     if (!academicYear) return NextResponse.json({ error: 'Academic year not found' }, { status: 404 })
 
     // Get next receipt number sequence
-    const lastPayment = await prisma.payment.findFirst({
-  orderBy: { receiptNumber: 'desc' },
+const receiptYear = academicYear.endYear
+
+const lastPayment = await prisma.payment.findFirst({
+  where: {
+    receiptNumber: {
+      startsWith: `${receiptYear}-`,
+    },
+  },
+  orderBy: {
+    receiptNumber: 'desc',
+  },
 })
+
 let sequence = 1
+
 if (lastPayment) {
-  const seqNum = parseInt(lastPayment.receiptNumber, 10)
-  if (!isNaN(seqNum)) sequence = seqNum + 1
+  const seqPart = lastPayment.receiptNumber.split('-')[1]
+  sequence = parseInt(seqPart, 10) + 1
 }
-const receiptNumber = generateReceiptNumber()
+
+const receiptNumber =
+  `${receiptYear}-${String(sequence).padStart(5, '0')}`
 
     const payment = await prisma.payment.create({
       data: {

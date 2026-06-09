@@ -6,11 +6,8 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
-export function generateReceiptNumber(): string {
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-  const random = Math.floor(10000 + Math.random() * 90000)
-
-  return `${today}/${random}`
+export function generateReceiptNumber(sequence: number): string {
+  return String(sequence).padStart(5, '0')
 }
 
 export function validateMobile(mobile: string): boolean {
