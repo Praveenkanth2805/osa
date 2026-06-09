@@ -88,7 +88,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
         <div className="flex-1 text-sm space-y-4">
           {/* Row: Receipt details (left) + QR (right) */}
           <div className="flex justify-between items-start">
-            <div className="grid grid-cols-[120px_1fr] gap-x-2 gap-y-1 text-sm">
+            <div className="ml-2 mt-2 grid grid-cols-[120px_1fr] gap-x-2 gap-y-1 text-sm">
               <span className="font-bold">Receipt No:</span>
               <span>{payment.receiptNumber.split('-')[1]}</span>
               <span className="font-bold">Date:</span>
@@ -101,8 +101,8 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
 
           {/* Student Details – using same grid layout */}
           <div className="border-t pt-2">
-            <p className="font-semibold mb-2">Student Details</p>
-            <div className="grid grid-cols-[120px_1fr_120px_1fr] gap-x-2 gap-y-1 text-sm">
+            <p className="ml-2 font-semibold mb-2">Student Details</p>
+            <div className="ml-2 grid grid-cols-[120px_1fr_120px_1fr] gap-x-2 gap-y-1 text-sm">
               <span className="font-bold">Roll No:</span>
               <span>{payment.student.registerNumber}</span>
               <span className="font-bold">Course:</span>
@@ -120,7 +120,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
 
           {/* Payment Details Table – already aligned */}
           <div className="border-t pt-2">
-            <p className="font-semibold mb-2">Payment Details</p>
+            <p className="ml-2 font-semibold mb-2">Payment Details</p>
             <table className="w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
