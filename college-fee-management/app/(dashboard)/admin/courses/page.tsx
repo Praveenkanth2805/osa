@@ -42,18 +42,23 @@ export default function CoursesPage() {
       const url = editingCourse ? `/api/courses?id=${editingCourse.id}` : '/api/courses'
       const method = editingCourse ? 'PUT' : 'POST'
       const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, fee: parseFloat(formData.fee) }),
-      })
-      if (!res.ok) throw new Error()
+  method,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ ...formData, fee: parseFloat(formData.fee) }),
+})
+
+const data = await res.json()
+
+if (!res.ok) {
+  throw new Error(data.error || 'Failed to save course')
+}
       showToast(`Course ${editingCourse ? 'updated' : 'added'} successfully`, 'success')
       setShowModal(false)
       resetForm()
       fetchData()
-    } catch (error) {
-      showToast('Failed to save course', 'error')
-    }
+    } catch (error: any) {
+  showToast(error.message, 'error')
+}
   }
 
   const handleDelete = async () => {

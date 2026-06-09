@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -17,14 +18,36 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
-  if (session?.user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, code, fee, departmentId } = await req.json()
-  const course = await prisma.course.create({
-    data: { name, code, fee, departmentId },
-    include: { department: true },
-  })
-  return NextResponse.json(course, { status: 201 })
+  if (session?.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  try {
+    const { name, code, fee, departmentId } = await req.json()
+
+    const course = await prisma.course.create({
+      data: { name, code, fee, departmentId },
+      include: { department: true },
+    })
+
+    return NextResponse.json(course, { status: 201 })
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      return NextResponse.json(
+        { error: 'Course code already exists' },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to create course' },
+      { status: 500 }
+    )
+  }
 }
 
 export async function PUT(req: NextRequest) {

@@ -28,26 +28,29 @@ export async function POST(req: NextRequest) {
   const departments = await prisma.department.findMany()
   const courses = await prisma.course.findMany()
   const academicYears = await prisma.academicYear.findMany()
- 
-  const departmentMap = new Map(
-  departments.map(d => [String(d.code).trim(), d.id])
-)
-  const courseMap = new Map(
-  courses.map(c => [String(c.code).trim(), c.id])
-)
-  const yearMap = new Map(academicYears.map(y => [y.year, y.id]))
+
+  const departmentMap = new Map(departments.map(d => [String(d.code).trim(), d.id]))
+  const courseMap = new Map(courses.map(c => [String(c.code).trim(), c.id]))
+  
+  // Create a flexible mapping for academic years: by startYear+endYear, and by normalized year string
+  const yearByStartEnd = new Map<string, string>() // key "startYear-endYear" -> id
+  const yearByNormalized = new Map<string, string>() // normalized year string -> id
+  for (const y of academicYears) {
+    const key = `${y.startYear}-${y.endYear}`
+    yearByStartEnd.set(key, y.id)
+    // Normalize: remove any spaces, convert to lowercase, keep as is
+    yearByNormalized.set(y.year.trim(), y.id)
+  }
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
-    const registerNumber = String(
-  row['Register Number'] || row['registerNumber'] || ''
-).trim()
+    const registerNumber = String(row['Register Number'] || row['registerNumber'] || '').trim()
     const name = row['Name'] || row['name']
     const gender = (row['Gender'] || row['gender'] || 'MALE').toUpperCase()
-    const mobile = String(row['Mobile'] || row['mobile'] || '')
+    const mobile = String(row['Mobile'] || row['mobile'] || '').trim()
     const departmentCode = row['Department Code'] || row['departmentCode']
     const courseCode = row['Course Code'] || row['courseCode']
-    const academicYearStr = row['Academic Year'] || row['academicYear'] || ''
+    const academicYearStr = (row['Academic Year'] || row['academicYear'] || '').toString().trim()
 
     // Validate required fields
     if (!registerNumber || !name || !mobile) {
@@ -55,53 +58,55 @@ export async function POST(req: NextRequest) {
       continue
     }
 
-    // Validate mobile
     if (!/^[0-9]{10}$/.test(mobile)) {
       errors.push(`Row ${i + 2}: Invalid mobile number (${mobile})`)
       continue
     }
 
-    // Validate gender
     if (!['MALE', 'FEMALE', 'OTHER'].includes(gender)) {
       errors.push(`Row ${i + 2}: Invalid gender (${gender}). Use MALE/FEMALE/OTHER`)
       continue
     }
 
-    // Validate department
-    const departmentId = departmentMap.get(
-  String(departmentCode).trim()
-)
+    const departmentId = departmentMap.get(String(departmentCode).trim())
     if (!departmentId) {
       errors.push(`Row ${i + 2}: Invalid Department Code (${departmentCode})`)
       continue
     }
 
-    // Validate course
-    const courseId = courseMap.get(
-  String(courseCode).trim()
-)
+    const courseId = courseMap.get(String(courseCode).trim())
     if (!courseId) {
       errors.push(`Row ${i + 2}: Invalid Course Code (${courseCode})`)
       continue
     }
 
-    // Verify course belongs to department
     const course = courses.find(c => c.id === courseId)
     if (course?.departmentId !== departmentId) {
       errors.push(`Row ${i + 2}: Course ${courseCode} does not belong to department ${departmentCode}`)
       continue
     }
 
-    // Validate academic year
-    let academicYearId = null
+    // --- Academic Year resolution ---
+    let academicYearId: string | null = null
     if (academicYearStr) {
-      academicYearId = yearMap.get(academicYearStr)
+      // Try exact match on year string
+      academicYearId = yearByNormalized.get(academicYearStr)
       if (!academicYearId) {
-        errors.push(`Row ${i + 2}: Invalid Academic Year (${academicYearStr}). Use format like "2025-26"`)
+        // Try to parse as "YYYY-YY" or "YYYY-YYYY"
+        const match = academicYearStr.match(/^(\d{4})-(\d{2,4})$/)
+        if (match) {
+          let startYear = parseInt(match[1], 10)
+          let endYear = parseInt(match[2], 10)
+          if (endYear < 100) endYear = startYear + (endYear - startYear % 100) // e.g., 2023-26 => endYear 2026
+          const key = `${startYear}-${endYear}`
+          academicYearId = yearByStartEnd.get(key)
+        }
+      }
+      if (!academicYearId) {
+        errors.push(`Row ${i + 2}: Invalid Academic Year (${academicYearStr}). Please ensure the year exists in the system.`)
         continue
       }
     } else {
-      // If no academic year provided, use current academic year
       const currentYear = academicYears.find(y => y.isCurrent)
       if (currentYear) {
         academicYearId = currentYear.id
@@ -112,10 +117,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check duplicate register number
-    const existing = await prisma.student.findUnique({
-  where: { registerNumber }
-})
-
+    const existing = await prisma.student.findUnique({ where: { registerNumber } })
     if (existing) {
       errors.push(`Row ${i + 2}: Duplicate Register Number (${registerNumber})`)
       continue
@@ -137,19 +139,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ errors, imported: 0 }, { status: 400 })
   }
 
-  // Bulk insert students
+  console.log('====================')
+  console.log('File Name:', file.name)
+  console.log('Rows Count:', rows.length)
+  console.log('First Row:', rows[0])
+  console.log('====================')
 
-console.log('====================')
-console.log('File Name:', file.name)
-console.log('Sheet Names:', workbook.SheetNames)
-console.log('Rows Count:', rows.length)
-console.log('First Row:', rows[0])
-console.log('All Rows:', rows)
-console.log('====================')
   try {
-    await prisma.student.createMany({
-      data: students,
-    })
+    await prisma.student.createMany({ data: students })
     return NextResponse.json({ imported: students.length, errors: [] })
   } catch (error: any) {
     console.error(error)
