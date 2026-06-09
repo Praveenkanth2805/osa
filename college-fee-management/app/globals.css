@@ -56,3 +56,21 @@
     background-color: white !important;
   }
 }
+
+/* Sidebar Scrollbar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #1d4ed8; /* blue */
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #1e40af; /* dark blue */
+  border-radius: 9999px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #1e3a8a;
+}

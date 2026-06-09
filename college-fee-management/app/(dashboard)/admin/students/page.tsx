@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { Student, Department, Course, AcademicYear } from '@/types'
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { useDebounce } from '@/hooks/useDebounce' 
 
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([])
@@ -29,31 +30,71 @@ export default function StudentsPage() {
     courseId: '',
     academicYearId: '',
   })
+
+  // Filter states
+  const [filters, setFilters] = useState({
+    registerNumber: '',
+    name: '',
+    departmentId: '',
+    courseId: '',
+    academicYearId: '',
+    status: 'active', // 'active', 'archived', 'all'
+  })
+
   const { showToast } = useToast()
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  // Debounce text filters
+  const debouncedRegisterNumber = useDebounce(filters.registerNumber, 500)
+  const debouncedName = useDebounce(filters.name, 500)
 
-  const fetchData = async () => {
+  // Fetch data whenever filters change
+  useEffect(() => {
+    fetchFilteredStudents()
+  }, [debouncedRegisterNumber, debouncedName, filters.departmentId, filters.courseId, filters.academicYearId, filters.status])
+
+  const fetchFilteredStudents = async () => {
+    setLoading(true)
     try {
-      const [studentsRes, deptsRes, coursesRes, yearsRes] = await Promise.all([
-        fetch('/api/students'),
-        fetch('/api/departments'),
-        fetch('/api/courses'),
-        fetch('/api/academic-years'),
-      ])
-      if (!studentsRes.ok || !deptsRes.ok || !coursesRes.ok || !yearsRes.ok) throw new Error()
-      setStudents(await studentsRes.json())
-      setDepartments(await deptsRes.json())
-      setCourses(await coursesRes.json())
-      setAcademicYears(await yearsRes.json())
+      const params = new URLSearchParams()
+      if (debouncedRegisterNumber) params.append('registerNumber', debouncedRegisterNumber)
+      if (debouncedName) params.append('name', debouncedName)
+      if (filters.departmentId) params.append('departmentId', filters.departmentId)
+      if (filters.courseId) params.append('courseId', filters.courseId)
+      if (filters.academicYearId) params.append('academicYearId', filters.academicYearId)
+      if (filters.status === 'active') params.append('isArchived', 'false')
+      else if (filters.status === 'archived') params.append('isArchived', 'true')
+      // 'all' sends no isArchived param
+
+      const res = await fetch(`/api/students?${params.toString()}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setStudents(data)
     } catch (error) {
-      showToast('Failed to load data', 'error')
+      showToast('Failed to load students', 'error')
     } finally {
       setLoading(false)
     }
   }
+
+  const fetchData = async () => {
+    try {
+      const [deptsRes, coursesRes, yearsRes] = await Promise.all([
+        fetch('/api/departments'),
+        fetch('/api/courses'),
+        fetch('/api/academic-years'),
+      ])
+      setDepartments(await deptsRes.json())
+      setCourses(await coursesRes.json())
+      setAcademicYears(await yearsRes.json())
+    } catch (error) {
+      showToast('Failed to load filter data', 'error')
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+    fetchFilteredStudents()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,7 +116,7 @@ export default function StudentsPage() {
       showToast(`Student ${editingStudent ? 'updated' : 'added'} successfully`, 'success')
       setShowModal(false)
       resetForm()
-      fetchData()
+      fetchFilteredStudents() // refresh list
     } catch (error: any) {
       showToast(error.message, 'error')
     }
@@ -83,19 +124,17 @@ export default function StudentsPage() {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, {
-        method: 'DELETE',
-      })
+      const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, { method: 'DELETE' })
       if (!res.ok) {
-  const err = await res.json()
-  throw new Error(err.error || 'Failed to delete student')
-}
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to delete student')
+      }
       showToast('Student deleted successfully', 'success')
       setDeleteConfirm({ isOpen: false, studentId: '' })
-      fetchData()
+      fetchFilteredStudents()
     } catch (error: any) {
-  showToast(error.message, 'error')
-}
+      showToast(error.message, 'error')
+    }
   }
 
   const resetForm = () => {
@@ -125,10 +164,25 @@ export default function StudentsPage() {
     setShowModal(true)
   }
 
-  if (loading) return <LoadingSpinner />
+  // Reset filters
+  const clearFilters = () => {
+    setFilters({
+      registerNumber: '',
+      name: '',
+      departmentId: '',
+      courseId: '',
+      academicYearId: '',
+      status: 'active',
+    })
+  }
 
-  // Get current academic year for default selection
-  const currentYear = academicYears.find(y => y.isCurrent)
+  // Filter courses based on selected department (for dropdown)
+  const filteredCourses = useMemo(() => {
+    if (!filters.departmentId) return courses
+    return courses.filter(c => c.departmentId === filters.departmentId)
+  }, [courses, filters.departmentId])
+
+  if (loading && students.length === 0) return <LoadingSpinner />
 
   return (
     <div>
@@ -144,6 +198,90 @@ export default function StudentsPage() {
         </div>
       </div>
 
+      {/* Filter Bar */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Register No</label>
+            <input
+              type="text"
+              value={filters.registerNumber}
+              onChange={(e) => setFilters({ ...filters, registerNumber: e.target.value })}
+              placeholder="Search by register no"
+              className="input-field py-1 px-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Student Name</label>
+            <input
+              type="text"
+              value={filters.name}
+              onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+              placeholder="Search by name"
+              className="input-field py-1 px-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Department</label>
+            <select
+              value={filters.departmentId}
+              onChange={(e) => setFilters({ ...filters, departmentId: e.target.value, courseId: '' })}
+              className="input-field py-1 px-2 text-sm"
+            >
+              <option value="">All Departments</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Course</label>
+            <select
+              value={filters.courseId}
+              onChange={(e) => setFilters({ ...filters, courseId: e.target.value })}
+              className="input-field py-1 px-2 text-sm"
+              disabled={!filters.departmentId}
+            >
+              <option value="">All Courses</option>
+              {filteredCourses.map(course => (
+                <option key={course.id} value={course.id}>{course.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Academic Year</label>
+            <select
+              value={filters.academicYearId}
+              onChange={(e) => setFilters({ ...filters, academicYearId: e.target.value })}
+              className="input-field py-1 px-2 text-sm"
+            >
+              <option value="">All Years</option>
+              {academicYears.map(year => (
+                <option key={year.id} value={year.id}>{year.year}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="input-field py-1 px-2 text-sm"
+            >
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end mt-3">
+          <button onClick={clearFilters} className="text-sm text-primary-600 hover:text-primary-800">
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Students Table */}
       <div className="overflow-x-auto">
         <table className="w-full max-w-5xl mx-auto divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
@@ -184,11 +322,16 @@ export default function StudentsPage() {
                 </td>
               </tr>
             ))}
+            {students.length === 0 && (
+              <tr>
+                <td colSpan={8} className="text-center py-8 text-gray-500">No students found</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Student Modal with Academic Year Dropdown */}
+      {/* Student Modal (unchanged) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">

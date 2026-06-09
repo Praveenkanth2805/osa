@@ -54,7 +54,7 @@ export default function Sidebar() {
         </p>
       </div>
       
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto sidebar-scroll">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.href

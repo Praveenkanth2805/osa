@@ -7,22 +7,37 @@ import { validateMobile } from '@/lib/utils'
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { searchParams } = new URL(req.url)
+  const registerNumber = searchParams.get('registerNumber')
+  const name = searchParams.get('name')
   const departmentId = searchParams.get('departmentId')
-  const isArchived = searchParams.get('isArchived') === 'true'
+  const courseId = searchParams.get('courseId')
   const academicYearId = searchParams.get('academicYearId')
- 
+  const isArchivedParam = searchParams.get('isArchived') // "true", "false", or null
 
-  const where: any = { isArchived }
+  const where: any = {}
 
-   if (academicYearId) {
-    where.academicYearId = academicYearId
+  // Text search (partial match)
+  if (registerNumber) where.registerNumber = { contains: registerNumber }
+  if (name) where.name = { contains: name }
+
+  // Exact match filters
+  if (departmentId) where.departmentId = departmentId
+  if (courseId) where.courseId = courseId
+  if (academicYearId) where.academicYearId = academicYearId
+
+  // isArchived filter: only apply if param is explicitly "true" or "false"
+  if (isArchivedParam === 'true') {
+    where.isArchived = true
+  } else if (isArchivedParam === 'false') {
+    where.isArchived = false
   }
-  
+  // If param is null, do not filter on isArchived → both active and archived are returned
+
+  // Department users can only see their own department
   if (session.user.role !== 'ADMIN') {
     where.departmentId = session.user.departmentId
-  } else if (departmentId) {
-    where.departmentId = departmentId
   }
 
   const students = await prisma.student.findMany({
