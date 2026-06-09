@@ -39,7 +39,10 @@ export default function PaymentsPage() {
     setDepartments(await deptsRes.json())
     setAcademicYears(await yearsRes.json())
   } catch (error) {
-    showToast(error.message, 'error')
+    showToast(
+    error instanceof Error ? error.message : 'Something went wrong',
+    'error'
+  )
   } finally {
     setLoading(false)
   }

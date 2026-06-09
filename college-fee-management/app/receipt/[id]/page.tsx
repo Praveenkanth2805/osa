@@ -75,8 +75,8 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
             <img src="/logos/college-logo.png" alt="Logo" className="ml-6 mt-6 h-20 w-auto" />
             <div className="flex-1">
               <h1 className="text-lg font-bold">Arignar Anna Government Arts College</h1>
-              <p className="text-sm font-semibold">Villupuram-605602</p>
-              <p className="text-md font-bold">Old Student's Association</p>
+              <p className="text-sm font-semibold">Villupuram-605 602.</p>
+              <p className="text-md font-bold">Old Students' Association</p>
             </div>
             <div className="w-12"></div>
           </div>
@@ -89,12 +89,10 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
           {/* Row: Receipt details (left) + QR (right) */}
           <div className="flex justify-between items-start">
             <div className="grid grid-cols-[120px_1fr] gap-x-2 gap-y-1 text-sm">
-              <span className="font-bold">Date:</span>
-              <span>{new Date(payment.paymentDate).toLocaleDateString()}</span>
               <span className="font-bold">Receipt No:</span>
               <span>{payment.receiptNumber}</span>
-              <span className="font-bold">Academic Year:</span>
-              <span>{payment.academicYear.year}</span>
+              <span className="font-bold">Date:</span>
+              <span>{new Date(payment.paymentDate).toLocaleDateString()}</span>
             </div>
             <div className="bg-gray-50 p-1 rounded border">
               <img src={qrCodeUrl} alt="QR" className="h-16 w-16" />
@@ -107,16 +105,16 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
             <div className="grid grid-cols-[120px_1fr_120px_1fr] gap-x-2 gap-y-1 text-sm">
               <span className="font-bold">Roll No:</span>
               <span>{payment.student.registerNumber}</span>
-              <span className="font-bold">Name:</span>
-              <span>{payment.student.name}</span>
-              <span className="font-bold">Gender:</span>
-              <span>{payment.student.gender}</span>
               <span className="font-bold">Course:</span>
               <span>{payment.student.course?.name}</span>
+              <span className="font-bold">Name:</span>
+              <span>{payment.student.name}</span>
               <span className="font-bold">Dept:</span>
               <span>{payment.student.department?.name}</span>
               <span className="font-bold">Mobile:</span>
               <span>{payment.student.mobile}</span>
+              <span className="font-bold">Academic Year:</span>
+              <span>{payment.academicYear.year}</span>
             </div>
           </div>
 
@@ -132,7 +130,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-2 py-1">Alumni Association Fee</td>
+                  <td className="px-2 py-1">Old Students' Association Fee</td>
                   <td className="text-right px-2 py-1">{payment.amount.toLocaleString()}</td>
                 </tr>
                 <tr className="font-bold border-t">
@@ -140,7 +138,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
                   <td className="text-right px-2 py-1">₹{payment.amount.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td colSpan={2} className="text-right text-xs text-gray-600 pt-2 px-2">
+                  <td colSpan={2} className="text-right text-base text-gray-600 pt-2 px-2">
                     Amount in words: {amountInWords} only
                   </td>
                 </tr>
@@ -229,7 +227,7 @@ export default function ReceiptPage() {
           <ReceiptCard payment={payment} qrCodeUrl={qrCodeUrl} copyType="College Copy" />
           
           {/* Vertical cut/dotted line */}
-          <div className="w-0.5 bg-gray-400 border-l-2 border-dashed print:border-dashed print:border-gray-500 print:w-0.5"></div>
+          <div className="mx-6 w-0.5 bg-gray-400 border-l-2 border-dashed print:border-dashed print:border-gray-500 print:w-0.5"></div>
           
           {/* Right receipt: Student Copy */}
           <ReceiptCard payment={payment} qrCodeUrl={qrCodeUrl} copyType="Student Copy" />
