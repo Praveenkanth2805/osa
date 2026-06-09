@@ -45,24 +45,39 @@ export default function BillList({ role }: BillListProps) {
 
   useEffect(() => {
     applyFilters()
-  }, [students, filters, payments])
+  }, [students, filters, payments,selectedYearId])
+
+  useEffect(() => {
+  if (selectedYearId) {
+    fetchStudents()
+    fetchPayments()
+  }
+}, [selectedYearId])
+
+      const fetchStudents = async () => {
+  const res = await fetch(
+    `/api/students?academicYearId=${selectedYearId}`
+  )
+
+  const data = await res.json()
+
+  setStudents(data.filter((s: Student) => !s.isArchived))
+}
 
   const fetchData = async () => {
     try {
-      const [studentsRes, yearsRes, deptsRes] = await Promise.all([
-        fetch('/api/students'),
-        fetch('/api/academic-years'),
-        isAdmin ? fetch('/api/departments') : Promise.resolve({ json: () => [] }),
-      ])
-      const studentsData = await studentsRes.json()
+      const [yearsRes, deptsRes] = await Promise.all([
+  fetch('/api/academic-years'),
+  isAdmin ? fetch('/api/departments') : Promise.resolve({ json: () => [] }),
+])
+
       const yearsData = await yearsRes.json()
-      
-      setStudents(studentsData.filter((s: Student) => !s.isArchived))
       setAcademicYears(yearsData)
       if (isAdmin) {
         setDepartments(await deptsRes.json())
       }
-      
+
+
       const currentYear = yearsData.find((y: AcademicYear) => y.isCurrent)
       if (currentYear) {
         setSelectedYearId(currentYear.id)

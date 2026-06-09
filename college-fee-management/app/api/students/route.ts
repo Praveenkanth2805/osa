@@ -7,12 +7,18 @@ import { validateMobile } from '@/lib/utils'
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { searchParams } = new URL(req.url)
   const departmentId = searchParams.get('departmentId')
   const isArchived = searchParams.get('isArchived') === 'true'
-  
+  const academicYearId = searchParams.get('academicYearId')
+ 
+
   const where: any = { isArchived }
+
+   if (academicYearId) {
+    where.academicYearId = academicYearId
+  }
+  
   if (session.user.role !== 'ADMIN') {
     where.departmentId = session.user.departmentId
   } else if (departmentId) {

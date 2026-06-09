@@ -45,7 +45,7 @@ export default function Sidebar() {
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-primary-700 text-white flex flex-col">
       <div className="p-4 border-b border-primary-600">
-        <h1 className="text-xl font-bold">Old Studnet Association Fee Management</h1>
+        <h1 className="text-xl font-bold">Old Students' Association Fee Management</h1>
         <p className="text-sm text-primary-200 mt-1">
           {session?.user?.name}
         </p>
