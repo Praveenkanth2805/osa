@@ -25,7 +25,8 @@
     "sheetjs-style": "*",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -40,6 +41,6 @@
     "prisma": "^5.22.0"
   },
   "prisma": {
-  "seed": "tsx prisma/seed.ts"
-}
+    "seed": "tsx prisma/seed.ts"
+  }
 }

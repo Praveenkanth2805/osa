@@ -59,12 +59,12 @@ export default function ImportStudentsPage() {
     // Sample data row (example values)
     const sampleRow = [
       '2024001',
-      'John Doe',
+      'student name',
       'MALE',
       '9876543210',
-      'CS',      // Department Code (must match existing department code in system)
-      'BSCS',    // Course Code (must match existing course code)
-      '2024-25'  // Academic Year (must match existing academic year format, e.g., 2024-25 or 2024-2025)
+      'COMPUTER SCIENCE',      // Department Code (must match existing department code in system)
+      'B214',    // Course Code (must match existing course code)
+      '2024-25'  // Academic Year (must match existing academic year format, e.g., 2023-26 or 2024-2027)
     ]
     
     // Create worksheet
@@ -114,7 +114,7 @@ export default function ImportStudentsPage() {
             />
             <p className="text-xs text-gray-500 mt-1">
               Required columns: Register Number, Name, Gender (MALE/FEMALE/OTHER), Mobile (10 digits), 
-              Department Code, Course Code, Academic Year (e.g., 2024-25 or 2024-2025)
+              Department Code(214), Course Code(B214), Academic Year (e.g., 2023-26 or 2024-2027)
             </p>
           </div>
           
