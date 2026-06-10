@@ -103,6 +103,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(student, { status: 201 })
 }
 
+
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -134,7 +135,21 @@ export async function PUT(req: NextRequest) {
   if (mobile && !validateMobile(mobile)) {
     return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
   }
+const existingStudent = await prisma.student.findFirst({
+  where: {
+    registerNumber,
+    NOT: {
+      id,
+    },
+  },
+})
 
+if (existingStudent) {
+  return NextResponse.json(
+    { error: 'Register number already exists' },
+    { status: 400 }
+  )
+}
   // Validate academic year if provided
   if (academicYearId) {
     const yearExists = await prisma.academicYear.findUnique({ where: { id: academicYearId } })
