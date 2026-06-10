@@ -35,11 +35,13 @@ export interface Student {
   mobile: string
   departmentId: string
   courseId: string
+  academicYearId?: string
   isArchived: boolean
   createdAt: string
   updatedAt: string
   department?: Department
   course?: Course
+  academicYear?: AcademicYear
   payments?: Payment[]
 }
 

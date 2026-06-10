@@ -9,7 +9,7 @@ import { EyeIcon } from '@heroicons/react/24/outline'
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<(Payment & { student: Student; academicYear: AcademicYear })[]>([])
-  const [filteredPayments, setFilteredPayments] = useState([])
+  const [filteredPayments, setFilteredPayments] = useState<(Payment & { student: Student; academicYear: AcademicYear })[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ registerNo: '', studentName: '', departmentId: '', academicYearId: '', receiptNumber: '' })
   const [departments, setDepartments] = useState<any[]>([])
@@ -97,7 +97,7 @@ export default function PaymentsPage() {
                 <td className="px-6 py-4">{p.student.department?.name}</td>
                 <td className="px-6 py-4">₹{p.amount}</td>
                 <td className="px-6 py-4">{new Date(p.paymentDate).toLocaleDateString()}</td>
-                <td className="px-6 py-4"><Link href={`/receipt/${p.id}`} className="text-blue-600"><EyeIcon className="w-5 h-5" /></Link></td>
+                <td className="px-6 py-4"><Link href={`/receipt/${p.id}`} target="_blank" className="text-blue-600"><EyeIcon className="w-5 h-5" /></Link></td>
               </tr>
             ))}
           </tbody>

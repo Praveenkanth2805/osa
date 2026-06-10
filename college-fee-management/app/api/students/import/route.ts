@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     let academicYearId: string | null = null
     if (academicYearStr) {
       // Try exact match on year string
-      academicYearId = yearByNormalized.get(academicYearStr)
+      academicYearId = yearByNormalized.get(academicYearStr) ?? null
       if (!academicYearId) {
         // Try to parse as "YYYY-YY" or "YYYY-YYYY"
         const match = academicYearStr.match(/^(\d{4})-(\d{2,4})$/)
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
           let endYear = parseInt(match[2], 10)
           if (endYear < 100) endYear = startYear + (endYear - startYear % 100) // e.g., 2023-26 => endYear 2026
           const key = `${startYear}-${endYear}`
-          academicYearId = yearByStartEnd.get(key)
+          academicYearId = yearByStartEnd.get(key) ?? null
         }
       }
       if (!academicYearId) {

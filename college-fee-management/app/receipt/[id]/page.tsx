@@ -76,7 +76,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
             <div className="flex-1">
               <h1 className="font-bold">Arignar Anna Government Arts College</h1>
               <p className="text-sm font-semibold">Villupuram-605 602.</p>
-              <p className="text-[15px] font-bold">Old Students' Association(OSA)</p>
+              <p className="text-[15px] font-bold">Old Students' Association</p>
             </div>
             <div className="w-12"></div>
           </div>
@@ -102,7 +102,7 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
           {/* Student Details – using same grid layout */}
           <div className="border-t pt-2">
             <p className="ml-2 font-semibold mb-2">Student Details</p>
-            <div className="ml-2 grid grid-cols-[120px_1fr_120px_1fr] gap-x-2 gap-y-1 text-sm">
+            <div className="ml-2 grid grid-cols-[120px_1.5fr_70px_1fr] gap-x-2 gap-y-1 text-sm">
               <span className="font-bold">Name:</span>
               <span>{payment.student.name}</span>
               <span className="font-bold">Course:</span>

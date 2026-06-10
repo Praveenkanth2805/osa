@@ -9,7 +9,7 @@ import { EyeIcon } from '@heroicons/react/24/outline'
 
 export default function DepartmentPaymentsPage() {
   const [payments, setPayments] = useState<(Payment & { student: Student })[]>([])
-  const [filteredPayments, setFilteredPayments] = useState([])
+  const [filteredPayments, setFilteredPayments] = useState<(Payment & { student: Student })[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const { showToast } = useToast()
