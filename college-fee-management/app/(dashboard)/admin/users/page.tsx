@@ -5,13 +5,14 @@ import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { User, Department } from '@/types'
-import { TrashIcon } from '@heroicons/react/24/outline'
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 export default function DepartmentUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' })
   const [formData, setFormData] = useState({
     email: '',
@@ -43,19 +44,31 @@ export default function DepartmentUsersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
+      const url = editingUser ? `/api/users?id=${editingUser.id}` : '/api/users'
+      const method = editingUser ? 'PUT' : 'POST'
+      
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
-      if (!res.ok) throw new Error()
-      showToast('Department user created successfully', 'success')
+      const data = await res.json()
+
+if (!res.ok) {
+  throw new Error(data.error || 'Failed to save user')
+}
+
+showToast(
+  `User ${editingUser ? 'updated' : 'created'} successfully`,
+  'success'
+)
+
       setShowModal(false)
-      setFormData({ email: '', password: '', name: '', departmentId: '' })
+      resetForm()
       fetchData()
-    } catch (error) {
-      showToast('Failed to create user', 'error')
-    }
+    } catch (error: any) {
+  showToast(error.message, 'error')
+}
   }
 
   const handleDelete = async () => {
@@ -68,6 +81,22 @@ export default function DepartmentUsersPage() {
     } catch (error) {
       showToast('Failed to delete user', 'error')
     }
+  }
+
+  const resetForm = () => {
+    setFormData({ email: '', password: '', name: '', departmentId: '' })
+    setEditingUser(null)
+  }
+
+  const editUser = (user: User) => {
+    setEditingUser(user)
+    setFormData({
+      email: user.email,
+      password: '', // password field left empty – user can optionally change it
+      name: user.name,
+      departmentId: user.departmentId || '',
+    })
+    setShowModal(true)
   }
 
   if (loading) return <LoadingSpinner />
@@ -97,12 +126,18 @@ export default function DepartmentUsersPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.departmentName || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
+                  <button
+                    onClick={() => editUser(user)}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    <PencilIcon className="w-5 h-5 inline" />
+                  </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: user.id })}
                     className="text-red-600 hover:text-red-800"
                   >
-                    <TrashIcon className="w-5 h-5" />
+                    <TrashIcon className="w-5 h-5 inline" />
                   </button>
                 </td>
               </tr>
@@ -111,11 +146,13 @@ export default function DepartmentUsersPage() {
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Modal for Add/Edit */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Add Department User</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {editingUser ? 'Edit Department User' : 'Add Department User'}
+            </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name *</label>
@@ -138,14 +175,17 @@ export default function DepartmentUsersPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Password *</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Password {editingUser && <span className="text-xs text-gray-500">(leave blank to keep current)</span>}
+                </label>
                 <input
                   type="password"
-                  required
                   minLength={6}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="input-field"
+                  placeholder={editingUser ? 'New password (optional)' : 'Password *'}
+                  {...(!editingUser && { required: true })}
                 />
               </div>
               <div>
@@ -169,14 +209,14 @@ export default function DepartmentUsersPage() {
                   type="button"
                   onClick={() => {
                     setShowModal(false)
-                    setFormData({ email: '', password: '', name: '', departmentId: '' })
+                    resetForm()
                   }}
                   className="btn-secondary"
                 >
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  Create User
+                  {editingUser ? 'Update User' : 'Create User'}
                 </button>
               </div>
             </form>

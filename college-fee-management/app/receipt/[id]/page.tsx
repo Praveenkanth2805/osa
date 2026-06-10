@@ -74,9 +74,9 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
           <div className="flex justify-between items-start">
             <img src="/logos/college-logo.png" alt="Logo" className="ml-6 mt-6 h-20 w-auto" />
             <div className="flex-1">
-              <h1 className="text-lg font-bold">Arignar Anna Government Arts College</h1>
+              <h1 className="font-bold">Arignar Anna Government Arts College</h1>
               <p className="text-sm font-semibold">Villupuram-605 602.</p>
-              <p className="text-md font-bold">Old Students' Association</p>
+              <p className="text-[15px] font-bold">Old Students' Association(OSA)</p>
             </div>
             <div className="w-12"></div>
           </div>
@@ -103,18 +103,18 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
           <div className="border-t pt-2">
             <p className="ml-2 font-semibold mb-2">Student Details</p>
             <div className="ml-2 grid grid-cols-[120px_1fr_120px_1fr] gap-x-2 gap-y-1 text-sm">
-              <span className="font-bold">Roll No:</span>
-              <span>{payment.student.registerNumber}</span>
-              <span className="font-bold">Course:</span>
-              <span>{payment.student.course?.name}</span>
               <span className="font-bold">Name:</span>
               <span>{payment.student.name}</span>
+              <span className="font-bold">Course:</span>
+              <span>{payment.student.course?.name}</span>
+              <span className="font-bold">Roll No:</span>
+              <span>{payment.student.registerNumber}</span>
               <span className="font-bold">Dept:</span>
               <span>{payment.student.department?.name}</span>
+              <span className="font-bold">Course Duration:</span>
+              <span>{payment.academicYear.year}</span>
               <span className="font-bold">Mobile:</span>
               <span>{payment.student.mobile}</span>
-              <span className="font-bold">Academic Year:</span>
-              <span>{payment.academicYear.year}</span>
             </div>
           </div>
 
@@ -227,7 +227,7 @@ export default function ReceiptPage() {
           <ReceiptCard payment={payment} qrCodeUrl={qrCodeUrl} copyType="College Copy" />
           
           {/* Vertical cut/dotted line */}
-          <div className="mx-6 w-0.5 bg-gray-400 border-l-2 border-dashed print:border-dashed print:border-gray-500 print:w-0.5"></div>
+          <div className="mx-8 w-0.5 bg-gray-400 border-l-2 border-dashed print:border-dashed print:border-gray-500 print:w-0.5"></div>
           
           {/* Right receipt: Student Copy */}
           <ReceiptCard payment={payment} qrCodeUrl={qrCodeUrl} copyType="Student Copy" />
