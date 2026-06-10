@@ -24,7 +24,7 @@ const adminMenuItems = [
   { name: 'Academic Years', href: '/admin/academic-years', icon: CalendarIcon },
   { name: 'Departments', href: '/admin/departments', icon: BuildingLibraryIcon },
   { name: 'Courses', href: '/admin/courses', icon: BookOpenIcon },
-  { name: 'Department Users', href: '/admin/users', icon: UserGroupIcon },
+  // { name: 'Department Users', href: '/admin/users', icon: UserGroupIcon },
   { name: 'Archive', href: '/admin/archive', icon: ArchiveBoxIcon },
 ]
 
