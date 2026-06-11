@@ -149,7 +149,7 @@ export default function DepartmentStudentsPage() {
   </div>
 </div>
 
-      <div className="bg-white rounded-lg shadow overflow-auto">
+      <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
