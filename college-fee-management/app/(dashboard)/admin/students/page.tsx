@@ -282,7 +282,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Students Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-auto max-h-[70vh] border rounded-lg">
         <table className="w-full max-w-5xl mx-auto divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>

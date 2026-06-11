@@ -31,9 +31,9 @@ export default function DashboardLayout({
       setShowTimer(false)
       warningTimer = setTimeout(() => setShowTimer(true), 14 * 60 * 1000)
       logoutTimer = setTimeout(() => {
-        // Auto logout after 15 minutes
+        // Auto logout after 1 day
         window.location.href = '/api/auth/signout'
-      }, 15 * 60 * 1000)
+      }, 24 * 60 * 60 * 1000)
     }
 
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
