@@ -19,6 +19,8 @@ export default function StudentsPage() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [showPaymentWarning, setShowPaymentWarning] = useState(false)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [showYearChangeWarning, setShowYearChangeWarning] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<any>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; studentId: string }>({
     isOpen: false,
     studentId: '',
@@ -99,30 +101,61 @@ export default function StudentsPage() {
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  e.preventDefault()
+
+  // If editing and academic year changed, check for payments
+  if (editingStudent && editingStudent.academicYearId !== formData.academicYearId) {
     try {
-      const url = editingStudent ? `/api/students?id=${editingStudent.id}` : '/api/students'
-      const method = editingStudent ? 'PUT' : 'POST'
-      
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || 'Failed to save student')
+      const checkRes = await fetch(`/api/students/${editingStudent.id}/has-payments`)
+      const { hasPayments } = await checkRes.json()
+      if (hasPayments) {
+        setPendingFormData(formData)
+        setShowYearChangeWarning(true)
+        return
       }
-      
-      showToast(`Student ${editingStudent ? 'updated' : 'added'} successfully`, 'success')
-      setShowModal(false)
-      resetForm()
-      fetchFilteredStudents() // refresh list
-    } catch (error: any) {
-      showToast(error.message, 'error')
+    } catch (error) {
+      showToast('Failed to verify payment status', 'error')
+      return
     }
   }
+
+  await saveStudent()
+}
+
+const saveStudent = async () => {
+  try {
+    const url = editingStudent ? `/api/students?id=${editingStudent.id}` : '/api/students'
+    const method = editingStudent ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Failed to save student')
+    }
+
+    showToast(`Student ${editingStudent ? 'updated' : 'added'} successfully`, 'success')
+    setShowModal(false)
+    resetForm()
+    fetchFilteredStudents()
+  } catch (error: any) {
+    showToast(error.message, 'error')
+  }
+}
+
+const confirmYearChange = async () => {
+  setShowYearChangeWarning(false)
+  // Restore the pending form data and save
+  if (pendingFormData) {
+    setFormData(pendingFormData)
+    await saveStudent()
+    setPendingFormData(null)
+  }
+}
 
   const handleDeleteClick = async (studentId: string) => {
   // Check if student has payments
@@ -443,6 +476,45 @@ const performDelete = async (studentId: string) => {
         </button>
         <button onClick={confirmDeleteWithPayment} className="btn-danger">
           Yes, Delete Student & Payment
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{showYearChangeWarning && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="flex items-center gap-2 mb-3">
+        <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h3 className="text-lg font-semibold text-gray-900">Warning: Academic Year Change</h3>
+      </div>
+      <p className="text-gray-700 mb-3">
+        This student has already made a payment for their current academic year.
+      </p>
+      <p className="text-gray-700 mb-4">
+        Changing the academic year will:
+      </p>
+      <ul className="list-disc list-inside text-sm text-gray-600 mb-4 space-y-1">
+        <li>Keep the existing payment record for the original academic year</li>
+        <li>Mark the student as <strong>Unpaid</strong> for the new academic year</li>
+        <li>Require a new payment for the new academic year</li>
+      </ul>
+      <p className="text-red-600 text-sm mb-5">This action cannot be undone.</p>
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setShowYearChangeWarning(false)
+            setPendingFormData(null)
+          }}
+          className="btn-secondary"
+        >
+          Cancel
+        </button>
+        <button onClick={confirmYearChange} className="btn-primary bg-yellow-600 hover:bg-yellow-700">
+          Yes, Change Academic Year
         </button>
       </div>
     </div>
