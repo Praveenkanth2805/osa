@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import * as XLSX from 'xlsx'
 
 export default function DepartmentImportStudentsPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -46,7 +47,7 @@ export default function DepartmentImportStudentsPage() {
   const downloadSample = () => {
     // Create sample Excel file
     const headers = ['Register Number', 'Name', 'Gender', 'Mobile', 'Course Code', 'Academic Year']
-    const sampleRow = ['2024001', 'John Doe', 'MALE', '9876543210', 'BSCS', '2024-25']
+    const sampleRow = ['2024001', 'name', 'MALE', '9876543210', 'B214', '2023-26']
     const wsData = [headers, sampleRow]
     const ws = XLSX.utils.aoa_to_sheet(wsData)
     ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 12 }]
@@ -70,7 +71,7 @@ export default function DepartmentImportStudentsPage() {
             <input type="file" accept=".xlsx, .xls, .csv" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-full" required />
             <p className="text-xs text-gray-500 mt-1">
               Required columns: Register Number, Name, Gender (MALE/FEMALE/OTHER), Mobile (10 digits), 
-              Course Code, Academic Year (e.g., 2024-25). Department is auto-assigned to your department.
+              Course Code, Academic Year (e.g., 2023-26). Department is auto-assigned to your department.
             </p>
           </div>
           {errors.length > 0 && (

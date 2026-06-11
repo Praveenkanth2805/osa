@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { Student, Course, AcademicYear } from '@/types'
+import Link from 'next/link'
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 export default function DepartmentStudentsPage() {
@@ -83,18 +84,24 @@ export default function DepartmentStudentsPage() {
   }
 
   const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, {
-        method: 'DELETE',
-      })
-      if (!res.ok) throw new Error('Failed to delete student')
-      showToast('Student deleted successfully', 'success')
-      setDeleteConfirm({ isOpen: false, studentId: '' })
-      fetchData()
-    } catch (error) {
-      showToast('Failed to delete student', 'error')
+  try {
+    const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, {
+      method: 'DELETE',
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to delete student')
     }
+
+    showToast('Student deleted successfully', 'success')
+    setDeleteConfirm({ isOpen: false, studentId: '' })
+    fetchData()
+  } catch (error: any) {
+    showToast(error.message, 'error')
   }
+}
 
   const resetForm = () => {
     setFormData({
@@ -127,13 +134,20 @@ export default function DepartmentStudentsPage() {
   if (loading) return <LoadingSpinner />
 
   return (
+        
     <div>
+      
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Students - {session?.user?.departmentName}</h1>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          Add Student
-        </button>
-      </div>
+  <h1 className="text-2xl font-bold">Students - {session?.user?.departmentName}</h1>
+  <div className="flex gap-3">
+    <Link href="/department/students/import" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+      Import Excel
+    </Link>
+    <button onClick={() => setShowModal(true)} className="btn-primary">
+      Add Student
+    </button>
+  </div>
+</div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
