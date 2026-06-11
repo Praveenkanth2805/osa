@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateReceiptNumber } from '@/lib/utils'
+import bcrypt from 'bcrypt'
+
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -106,4 +108,33 @@ const receiptNumber =
     console.error('Payments POST error:', error)
     return NextResponse.json({ error: error.message || 'Failed to create payment' }, { status: 500 })
   }
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (session?.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get('id')
+  if (!id) {
+    return NextResponse.json({ error: 'Payment ID required' }, { status: 400 })
+  }
+
+  const { password } = await req.json()
+  if (!password) {
+    return NextResponse.json({ error: 'Password required' }, { status: 400 })
+  }
+
+  // Verify admin password
+  const adminUser = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  })
+  if (!adminUser || !bcrypt.compareSync(password, adminUser.password)) {
+    return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
+  }
+
+  await prisma.payment.delete({ where: { id } })
+  return NextResponse.json({ success: true })
 }

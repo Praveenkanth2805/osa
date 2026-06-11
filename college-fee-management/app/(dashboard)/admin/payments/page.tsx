@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { Payment, Student, AcademicYear } from '@/types'
-import { EyeIcon } from '@heroicons/react/24/outline'
+import { EyeIcon,TrashIcon } from '@heroicons/react/24/outline'
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<(Payment & { student: Student; academicYear: AcademicYear })[]>([])
@@ -15,6 +15,9 @@ export default function PaymentsPage() {
   const [departments, setDepartments] = useState<any[]>([])
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
   const { showToast } = useToast()
+  const [resetPaymentId, setResetPaymentId] = useState<string | null>(null)
+  const [resetPassword, setResetPassword] = useState('')
+  const [showResetModal, setShowResetModal] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -58,6 +61,30 @@ export default function PaymentsPage() {
     setFilteredPayments(filtered)
   }
 
+  const handleResetPayment = async () => {
+  if (!resetPaymentId) return
+  try {
+    const res = await fetch(`/api/payments?id=${resetPaymentId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: resetPassword }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Failed to reset payment')
+    }
+    showToast('Payment reset successfully', 'success')
+    setShowResetModal(false)
+    setResetPassword('')
+    setResetPaymentId(null)
+    fetchData() // refresh list
+  } catch (error: any) {
+    showToast(error.message, 'error')
+  }
+}
+
+
+
   if (loading) return <LoadingSpinner />
 
   return (
@@ -98,10 +125,55 @@ export default function PaymentsPage() {
                 <td className="px-6 py-4">₹{p.amount}</td>
                 <td className="px-6 py-4">{new Date(p.paymentDate).toLocaleDateString()}</td>
                 <td className="px-6 py-4"><Link href={`/receipt/${p.id}`} target="_blank" className="text-blue-600"><EyeIcon className="w-5 h-5" /></Link></td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+  <button
+    onClick={() => {
+      setResetPaymentId(p.id)
+      setShowResetModal(true)
+    }}
+    className="text-red-600 hover:text-red-800"
+    title="Reset Payment"
+  >
+    <TrashIcon className="w-5 h-5" />
+  </button>
+</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {showResetModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <h3 className="text-lg font-semibold mb-4">Reset Payment</h3>
+      <p className="text-sm text-gray-600 mb-4">
+        Enter your admin password to permanently delete this payment record.
+      </p>
+      <input
+        type="password"
+        placeholder="Admin Password"
+        value={resetPassword}
+        onChange={(e) => setResetPassword(e.target.value)}
+        className="input-field mb-4"
+        autoFocus
+      />
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setShowResetModal(false)
+            setResetPassword('')
+            setResetPaymentId(null)
+          }}
+          className="btn-secondary"
+        >
+          Cancel
+        </button>
+        <button onClick={handleResetPayment} className="btn-primary bg-red-600 hover:bg-red-700">
+          Confirm Reset
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   )

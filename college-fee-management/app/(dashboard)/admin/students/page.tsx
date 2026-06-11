@@ -17,6 +17,8 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
+  const [showPaymentWarning, setShowPaymentWarning] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; studentId: string }>({
     isOpen: false,
     studentId: '',
@@ -122,20 +124,46 @@ export default function StudentsPage() {
     }
   }
 
-  const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/students?id=${deleteConfirm.studentId}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || 'Failed to delete student')
-      }
-      showToast('Student deleted successfully', 'success')
-      setDeleteConfirm({ isOpen: false, studentId: '' })
-      fetchFilteredStudents()
-    } catch (error: any) {
-      showToast(error.message, 'error')
+  const handleDeleteClick = async (studentId: string) => {
+  // Check if student has payments
+  try {
+    const checkRes = await fetch(`/api/students/${studentId}/has-payments`)
+    const { hasPayments } = await checkRes.json()
+    
+    if (hasPayments) {
+      setPendingDeleteId(studentId)
+      setShowPaymentWarning(true)
+    } else {
+      // No payments, proceed directly
+      setDeleteConfirm({ isOpen: true, studentId })
     }
+  } catch (error) {
+    showToast('Failed to check payment status', 'error')
   }
+}
+
+const confirmDeleteWithPayment = async () => {
+  if (!pendingDeleteId) return
+  setShowPaymentWarning(false)
+  // Now proceed with deletion
+  await performDelete(pendingDeleteId)
+  setPendingDeleteId(null)
+}
+
+const performDelete = async (studentId: string) => {
+  try {
+    const res = await fetch(`/api/students?id=${studentId}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Failed to delete student')
+    }
+    showToast('Student deleted successfully', 'success')
+    setDeleteConfirm({ isOpen: false, studentId: '' })
+    fetchFilteredStudents() // refresh the list
+  } catch (error: any) {
+    showToast(error.message, 'error')
+  }
+}
 
   const resetForm = () => {
     setFormData({
@@ -316,9 +344,12 @@ export default function StudentsPage() {
                   <button onClick={() => editStudent(student)} className="text-blue-600 hover:text-blue-800 mr-3">
                     <PencilIcon className="w-5 h-5" />
                   </button>
-                  <button onClick={() => setDeleteConfirm({ isOpen: true, studentId: student.id })} className="text-red-600 hover:text-red-800">
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
+                  <button
+  onClick={() => handleDeleteClick(student.id)}
+  className="text-red-600 hover:text-red-800"
+>
+  <TrashIcon className="w-5 h-5" />
+</button>
                 </td>
               </tr>
             ))}
@@ -391,7 +422,40 @@ export default function StudentsPage() {
         </div>
       )}
 
-      <ConfirmDialog isOpen={deleteConfirm.isOpen} title="Delete Student" message="Are you sure?" onConfirm={handleDelete} onCancel={() => setDeleteConfirm({ isOpen: false, studentId: '' })} />
+      {showPaymentWarning && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <h3 className="text-lg font-semibold text-red-600 mb-2">⚠️ Payment Record Exists</h3>
+      <p className="text-gray-700 mb-4">
+        This student has made a payment. Deleting the student will also permanently delete the associated payment record.
+        This action cannot be undone.
+      </p>
+      <p className="text-gray-600 mb-6">Are you absolutely sure you want to delete this student?</p>
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            setShowPaymentWarning(false)
+            setPendingDeleteId(null)
+          }}
+          className="btn-secondary"
+        >
+          Cancel
+        </button>
+        <button onClick={confirmDeleteWithPayment} className="btn-danger">
+          Yes, Delete Student & Payment
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+<ConfirmDialog
+  isOpen={deleteConfirm.isOpen && !showPaymentWarning}
+  title="Delete Student"
+  message="Are you sure you want to delete this student? This action cannot be undone."
+  onConfirm={() => performDelete(deleteConfirm.studentId)}
+  onCancel={() => setDeleteConfirm({ isOpen: false, studentId: '' })}
+/>
     </div>
   )
 }

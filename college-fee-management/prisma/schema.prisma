@@ -92,7 +92,7 @@ model Payment {
   status         String      @default("PAID") // PAID or UNPAID
   createdAt      DateTime    @default(now()) @map("created_at")
 
-  student        Student     @relation(fields: [studentId], references: [id])
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
   @@unique([studentId, academicYearId])
   @@map("payments")
