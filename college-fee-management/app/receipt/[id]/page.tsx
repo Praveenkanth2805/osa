@@ -68,10 +68,17 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
 
   return (
     <div className="w-1/2 px-4 print:px-2">
-      <div className="bg-white shadow-lg print:shadow-none h-full flex flex-col">
+      <div className="relative bg-white shadow-lg print:shadow-none h-full flex flex-col overflow-hidden">
         {/* Header remains same */}
-        <div className="text-center border-b pb-3 mb-4">
-          <div className="flex justify-between items-start">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10 z-0">
+  <img
+    src="/logos/tn-govt-logo.png"
+    alt="Government of Tamil Nadu"
+    className="w-72 h-auto"
+  />
+</div>
+        <div className="relative z-10 text-center border-b pb-3 mb-4">
+          <div className=" relative z-10 flex justify-between items-start">
             <img src="/logos/college-logo.png" alt="Logo" className="ml-6 mt-6 h-20 w-auto" />
             <div className="flex-1">
               <h1 className="font-bold">Arignar Anna Government Arts College</h1>
@@ -217,9 +224,6 @@ export default function ReceiptPage() {
       {/* A4 Landscape container */}
       <div className="max-w-[297mm] mx-auto relative print:max-w-none">
         {/* Background Watermark - centered on whole page */}
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center opacity-10 print:opacity-10 z-0">
-          <img src="/logos/tn-govt-logo.png" alt="Government of Tamil Nadu" className="w-80 h-auto" />
-        </div>
 
         {/* Two receipts side by side with cut line */}
         <div className="relative z-10 flex flex-row print:flex-row print:justify-center">

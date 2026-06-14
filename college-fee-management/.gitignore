@@ -36,5 +36,8 @@ next-env.d.ts
 # prisma
 prisma/*.db
 prisma/*.db-journal
-
+prisma/migrations
 college-fee-management.tar.gz
+
+dist/
+next/
