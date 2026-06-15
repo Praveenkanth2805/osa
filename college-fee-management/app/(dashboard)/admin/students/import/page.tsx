@@ -62,9 +62,9 @@ export default function ImportStudentsPage() {
       'student name',
       'MALE',
       '9876543210',
-      'COMPUTER SCIENCE',      // Department Code (must match existing department code in system)
+      '214',      // Department Code (must match existing department code in system)
       'B214',    // Course Code (must match existing course code)
-      '2024-25'  // Academic Year (must match existing academic year format, e.g., 2023-26 or 2024-2027)
+      '2023-26'  // Academic Year (must match existing academic year format, e.g., 2023-26 or 2024-2027)
     ]
     
     // Create worksheet
