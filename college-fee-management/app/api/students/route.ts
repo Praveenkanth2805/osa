@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { validateMobile } from '@/lib/utils'
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  let { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+  let { registerNumber, name, gender, departmentId, courseId, academicYearId } = body
 
   // For department users, force departmentId to their own
   if (session.user.role !== 'ADMIN') {
@@ -67,12 +66,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (!registerNumber || !name || !mobile || !departmentId || !courseId || !academicYearId) {
+  if (!registerNumber || !name  || !departmentId || !courseId || !academicYearId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-  }
-
-  if (!validateMobile(mobile)) {
-    return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
   }
 
   const existing = await prisma.student.findUnique({
@@ -93,7 +88,6 @@ export async function POST(req: NextRequest) {
       registerNumber,
       name,
       gender,
-      mobile,
       departmentId,
       courseId,
       academicYearId,
@@ -113,7 +107,7 @@ export async function PUT(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
   const body = await req.json()
-  let { registerNumber, name, gender, mobile, departmentId, courseId, academicYearId } = body
+  let { registerNumber, name, gender,departmentId, courseId, academicYearId } = body
 
   // For department users, force departmentId to their own
   if (session.user.role !== 'ADMIN') {
@@ -128,12 +122,8 @@ export async function PUT(req: NextRequest) {
     }
   }
 
-  if (!registerNumber || !name || !mobile || !courseId || !academicYearId) {
+  if (!registerNumber || !name|| !courseId || !academicYearId) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-  }
-
-  if (mobile && !validateMobile(mobile)) {
-    return NextResponse.json({ error: 'Invalid mobile number' }, { status: 400 })
   }
 const existingStudent = await prisma.student.findFirst({
   where: {
@@ -164,7 +154,6 @@ if (existingStudent) {
       registerNumber,
       name,
       gender,
-      mobile,
       departmentId,
       courseId,
       academicYearId: academicYearId || null,

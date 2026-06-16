@@ -44,7 +44,6 @@ async function main() {
       data: {
         name: 'Computer Science',
         code: 'CS',
-        description: 'Department of Computer Science',
       },
     })
     await prisma.course.create({

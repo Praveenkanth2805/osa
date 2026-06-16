@@ -13,7 +13,7 @@ export default function DepartmentsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingDept, setEditingDept] = useState<Department | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' })
-  const [formData, setFormData] = useState({ name: '', code: '', description: '' })
+  const [formData, setFormData] = useState({ name: '', code: ''})
   const { showToast } = useToast()
 
   useEffect(() => { fetchDepartments() }, [])
@@ -62,7 +62,7 @@ export default function DepartmentsPage() {
   }
 
   const resetForm = () => {
-    setFormData({ name: '', code: '', description: '' })
+    setFormData({ name: '', code: '' })
     setEditingDept(null)
   }
 
@@ -83,7 +83,6 @@ export default function DepartmentsPage() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
@@ -92,12 +91,11 @@ export default function DepartmentsPage() {
               <tr key={dept.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{dept.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{dept.code}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{dept.description || '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                   <button
                     onClick={() => {
                       setEditingDept(dept)
-                      setFormData({ name: dept.name, code: dept.code, description: dept.description || '' })
+                      setFormData({ name: dept.name, code: dept.code|| '' })
                       setShowModal(true)
                     }}
                     className="text-blue-600 hover:text-blue-800 mr-3"
@@ -142,15 +140,6 @@ export default function DepartmentsPage() {
                   required
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  className="input-field"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="input-field"
                 />
               </div>

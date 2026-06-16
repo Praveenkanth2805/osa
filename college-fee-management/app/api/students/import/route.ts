@@ -49,21 +49,12 @@ export async function POST(req: NextRequest) {
     const registerNumber = String(row['Register Number'] || row['registerNumber'] || '').trim()
     const name = row['Name'] || row['name']
     const gender = (row['Gender'] || row['gender'] || 'MALE').toUpperCase()
-    const mobile = String(row['Mobile'] || row['mobile'] || '').trim()
     const departmentCode = isAdmin ? (row['Department Code'] || row['departmentCode']) : null
     const courseCode = row['Course Code'] || row['courseCode']
     const academicYearStr = (row['Academic Year'] || row['academicYear'] || '').toString().trim()
 
     // Validate required fields
-    if (!registerNumber || !name || !mobile) {
-      errors.push(`Row ${i + 2}: Missing required fields (Register Number, Name, Mobile)`)
-      continue
-    }
 
-    if (!/^[0-9]{10}$/.test(mobile)) {
-      errors.push(`Row ${i + 2}: Invalid mobile number (${mobile})`)
-      continue
-    }
 
     if (!['MALE', 'FEMALE', 'OTHER'].includes(gender)) {
       errors.push(`Row ${i + 2}: Invalid gender (${gender}). Use MALE/FEMALE/OTHER`)
@@ -149,7 +140,6 @@ export async function POST(req: NextRequest) {
       registerNumber,
       name,
       gender,
-      mobile,
       departmentId,
       courseId,
       academicYearId,

@@ -25,7 +25,6 @@ model Department {
   id          String    @id @default(cuid())
   name        String    @unique
   code        String    @unique
-  description String?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -54,7 +53,6 @@ model Student {
   registerNumber String    @unique @map("register_number")
   name           String
   gender         String    // MALE, FEMALE, OTHER
-  mobile         String
   departmentId   String    @map("department_id")
   courseId       String    @map("course_id")
   academicYearId String?   @map("academic_year_id")

@@ -11,7 +11,7 @@ export interface Department {
   id: string
   name: string
   code: string
-  description?: string
+  //description?: string
   createdAt: string
   updatedAt: string
 }
@@ -32,7 +32,7 @@ export interface Student {
   registerNumber: string
   name: string
   gender: 'MALE' | 'FEMALE' | 'OTHER'
-  mobile: string
+  //mobile: string
   departmentId: string
   courseId: string
   academicYearId?: string

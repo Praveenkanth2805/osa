@@ -25,7 +25,6 @@ export default function DepartmentStudentsPage() {
     registerNumber: '',
     name: '',
     gender: 'MALE',
-    mobile: '',
     courseId: '',
     academicYearId: '',
   })
@@ -108,7 +107,6 @@ export default function DepartmentStudentsPage() {
       registerNumber: '',
       name: '',
       gender: 'MALE',
-      mobile: '',
       courseId: '',
       academicYearId: '',
     })
@@ -121,7 +119,6 @@ export default function DepartmentStudentsPage() {
       registerNumber: student.registerNumber,
       name: student.name,
       gender: student.gender,
-      mobile: student.mobile,
       courseId: student.courseId,
       academicYearId: student.academicYearId || '',
     })
@@ -139,14 +136,14 @@ export default function DepartmentStudentsPage() {
       
       <div className="flex justify-between items-center mb-6">
   <h1 className="text-2xl font-bold">Students - {session?.user?.departmentName}</h1>
-  <div className="flex gap-3">
+  {/* <div className="flex gap-3">
     <Link href="/department/students/import" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
       Import Excel
     </Link>
     <button onClick={() => setShowModal(true)} className="btn-primary">
       Add Student
     </button>
-  </div>
+  </div> */}
 </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -157,9 +154,8 @@ export default function DepartmentStudentsPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Course</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Academic Year</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Mobile</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Actions</th>
+              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Actions</th> */}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -169,22 +165,21 @@ export default function DepartmentStudentsPage() {
                 <td className="px-6 py-4 text-sm">{student.name}</td>
                 <td className="px-6 py-4 text-sm">{student.course?.name}</td>
                 <td className="px-6 py-4 text-sm">{student.academicYear?.year || '-'}</td>
-                <td className="px-6 py-4 text-sm">{student.mobile}</td>
-                <td className="px-6 py-4">
+                {/* <td className="px-6 py-4">
                   {student.isArchived ? (
                     <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Archived</span>
                   ) : (
                     <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
                   )}
-                </td>
-                <td className="px-6 py-4">
+                </td> */}
+                {/* <td className="px-6 py-4">
                   <button onClick={() => editStudent(student)} className="text-blue-600 mr-3">
                     <PencilIcon className="w-5 h-5" />
                   </button>
                   <button onClick={() => setDeleteConfirm({ isOpen: true, studentId: student.id })} className="text-red-600">
                     <TrashIcon className="w-5 h-5" />
                   </button>
-                </td>
+                </td> */}
               </tr>
             ))}
           </tbody>
@@ -212,10 +207,6 @@ export default function DepartmentStudentsPage() {
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other</option>
                 </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Mobile *</label>
-                <input type="tel" required pattern="[0-9]{10}" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="input-field" />
               </div>
               <div>
                 <label className="block text-sm font-medium">Department</label>

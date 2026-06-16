@@ -29,7 +29,6 @@ export default function StudentsPage() {
     registerNumber: '',
     name: '',
     gender: 'MALE',
-    mobile: '',
     departmentId: '',
     courseId: '',
     academicYearId: '',
@@ -203,7 +202,6 @@ const performDelete = async (studentId: string) => {
       registerNumber: '',
       name: '',
       gender: 'MALE',
-      mobile: '',
       departmentId: '',
       courseId: '',
       academicYearId: '',
@@ -217,7 +215,6 @@ const performDelete = async (studentId: string) => {
       registerNumber: student.registerNumber,
       name: student.name,
       gender: student.gender,
-      mobile: student.mobile,
       departmentId: student.departmentId,
       courseId: student.courseId,
       academicYearId: student.academicYearId || '',
@@ -352,7 +349,6 @@ const performDelete = async (studentId: string) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Academic Year</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mobile</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -365,7 +361,6 @@ const performDelete = async (studentId: string) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.department?.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.course?.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.academicYear?.year || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.mobile}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {student.isArchived ? (
                     <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Archived</span>
@@ -416,10 +411,6 @@ const performDelete = async (studentId: string) => {
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other</option>
                 </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Mobile *</label>
-                <input type="tel" required pattern="[0-9]{10}" value={formData.mobile} onChange={(e) => setFormData({ ...formData, mobile: e.target.value })} className="input-field" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Department *</label>

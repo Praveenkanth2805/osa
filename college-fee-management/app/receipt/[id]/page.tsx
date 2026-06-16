@@ -120,8 +120,6 @@ function ReceiptCard({ payment, qrCodeUrl, copyType }: {
               <span>{payment.student.department?.name}</span>
               <span className="font-bold">Course Duration:</span>
               <span>{payment.academicYear.year}</span>
-              <span className="font-bold">Mobile:</span>
-              <span>{payment.student.mobile}</span>
             </div>
           </div>
 

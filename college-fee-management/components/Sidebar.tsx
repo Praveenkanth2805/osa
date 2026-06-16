@@ -13,7 +13,8 @@ import {
   UserGroupIcon,
   ArchiveBoxIcon,
   DocumentTextIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  DocumentDuplicateIcon
 } from '@heroicons/react/24/outline'
 
 const adminMenuItems = [
@@ -21,19 +22,20 @@ const adminMenuItems = [
   { name: 'Students', href: '/admin/students', icon: UsersIcon },
   { name: 'Payments History', href: '/admin/payments', icon: CreditCardIcon },
   { name: 'Bill', href: '/admin/bills', icon: DocumentTextIcon },
+  // { name: 'Empty Receipt', href: '/receipt/empty', icon: DocumentDuplicateIcon },
   { name: 'Academic Years', href: '/admin/academic-years', icon: CalendarIcon },
   { name: 'Departments', href: '/admin/departments', icon: BuildingLibraryIcon },
   { name: 'Courses', href: '/admin/courses', icon: BookOpenIcon },
   { name: 'Department Users', href: '/admin/users', icon: UserGroupIcon },
-  { name: 'Archive', href: '/admin/archive', icon: ArchiveBoxIcon },
+  // { name: 'Archive', href: '/admin/archive', icon: ArchiveBoxIcon },
 ]
 
 const departmentMenuItems = [
   { name: 'Dashboard', href: '/department/dashboard', icon: HomeIcon },
   { name: 'Students', href: '/department/students', icon: UsersIcon },
   { name: 'Payments', href: '/department/payments', icon: CreditCardIcon },
-  { name: 'Bill', href: '/department/bills', icon: DocumentTextIcon }
-
+  { name: 'Bill', href: '/department/bills', icon: DocumentTextIcon },
+  // { name: 'Empty Receipt', href: '/receipt/empty', icon: DocumentDuplicateIcon }
 ]
 
 export default function Sidebar() {
