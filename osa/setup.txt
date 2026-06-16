@@ -1,0 +1,68 @@
+
+# College Fee Management System - Setup Guide
+
+## Prerequisites
+- Node.js 18+ installed
+- Git (optional)
+
+## Installation Steps
+
+### 1. Clone or download the project
+```bash
+git clone <repository-url>
+cd college-fee-management
+2. Install dependencies
+bash
+npm install
+3. Configure environment variables
+Create a file named .env.local in the root folder with these contents:
+
+text
+DATABASE_URL="file:./prisma/dev.db"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-change-this"
+ADMIN_EMAIL="admin@college.edu"
+ADMIN_PASSWORD="Admin@123"
+4. Setup database
+bash
+npx prisma db push
+npx prisma generate
+npx prisma db seed
+5. Create logo folders (optional)
+bash
+mkdir -p public/logos
+# Add your college-logo.png and tn-govt-logo.png files inside public/logos/
+6. Run the application
+bash
+npm run dev
+7. Access the system
+Open your browser and go to: http://localhost:3000
+
+Default Admin Login:
+
+Email: admin@college.edu
+
+Password: Admin@123
+
+Troubleshooting
+Database errors
+Delete prisma/dev.db and re-run:
+
+bash
+rm prisma/dev.db
+npx prisma db push
+npx prisma db seed
+Missing logos
+The system works without logos, but you'll see 404 errors. Add your own images to public/logos/ to fix.
+
+Port already in use
+Change port in package.json scripts or stop the process using port 3000.
+
+Folder Structure
+text
+college-fee-management/
+├── app/           # Next.js pages and API routes
+├── components/    # Reusable UI components
+├── prisma/        # Database schema
+├── public/        # Static files (logos)
+└── types/         # TypeScript definitions
