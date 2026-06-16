@@ -50,7 +50,6 @@ export default function ImportStudentsPage() {
       'Register Number',
       'Name',
       'Gender',
-      'Mobile',
       'Department Code',
       'Course Code',
       'Academic Year'
@@ -61,7 +60,6 @@ export default function ImportStudentsPage() {
       '2024001',
       'student name',
       'MALE',
-      '9876543210',
       '214',      // Department Code (must match existing department code in system)
       'B214',    // Course Code (must match existing course code)
       '2023-26'  // Academic Year (must match existing academic year format, e.g., 2023-26 or 2024-2027)
@@ -76,7 +74,6 @@ export default function ImportStudentsPage() {
       { wch: 15 }, // Register Number
       { wch: 20 }, // Name
       { wch: 10 }, // Gender
-      { wch: 15 }, // Mobile
       { wch: 15 }, // Department Code
       { wch: 15 }, // Course Code
       { wch: 12 }  // Academic Year
@@ -113,7 +110,7 @@ export default function ImportStudentsPage() {
               required 
             />
             <p className="text-xs text-gray-500 mt-1">
-              Required columns: Register Number, Name, Gender (MALE/FEMALE/OTHER), Mobile (10 digits), 
+              Required columns: Register Number, Name, Gender (MALE/FEMALE/OTHER),
               Department Code(214), Course Code(B214), Academic Year (e.g., 2023-26 or 2024-2027)
             </p>
           </div>

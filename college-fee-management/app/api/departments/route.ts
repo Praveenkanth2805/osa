@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (session?.user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { name, code, description } = await req.json()
+  const { name, code } = await req.json()
   const department = await prisma.department.create({
-    data: { name, code, description },
+    data: { name, code },
   })
   return NextResponse.json(department, { status: 201 })
 }
@@ -29,10 +29,10 @@ export async function PUT(req: NextRequest) {
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-  const { name, code, description } = await req.json()
+  const { name, code } = await req.json()
   const department = await prisma.department.update({
     where: { id },
-    data: { name, code, description },
+    data: { name, code },
   })
   return NextResponse.json(department)
 }
