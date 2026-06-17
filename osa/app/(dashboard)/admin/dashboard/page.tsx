@@ -9,7 +9,10 @@ import {
   UserGroupIcon,
   CheckCircleIcon,
   XCircleIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline'
+import DashboardHeader from '@/components/DashboardHeader'
+
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -40,6 +43,7 @@ export default function AdminDashboard() {
     { title: 'Paid Students', value: stats?.paidStudents || 0, icon: CheckCircleIcon, color: 'bg-green-500' },
     { title: 'Unpaid Students', value: stats?.unpaidStudents || 0, icon: XCircleIcon, color: 'bg-red-500' },
     { title: 'Total Collection', value: `₹${stats?.totalCollection.toLocaleString() || 0}`, icon: CurrencyRupeeIcon, color: 'bg-purple-500' },
+    { title: "Today's Payments", value: stats?.todayPayments || 0, icon: CalendarDaysIcon, color: 'bg-indigo-500' },
   ]
 
   return (

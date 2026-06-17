@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/contexts/ToastContext'
+import { useSystemDate } from '@/contexts/SystemDateContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { Student, AcademicYear, Payment, Department } from '@/types'
 import { EyeIcon, CreditCardIcon } from '@heroicons/react/24/outline'
@@ -13,6 +15,8 @@ interface BillListProps {
 
 export default function BillList({ role }: BillListProps) {
   const { data: session } = useSession()
+  const router = useRouter()
+  const { currentDate } = useSystemDate()
   const [students, setStudents] = useState<Student[]>([])
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([])
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([])
@@ -29,6 +33,8 @@ export default function BillList({ role }: BillListProps) {
     departmentId: '',
     receiptNumber: '',
   })
+  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const { showToast } = useToast()
 
   const isAdmin = role === 'ADMIN'
@@ -39,44 +45,33 @@ export default function BillList({ role }: BillListProps) {
 
   useEffect(() => {
     if (selectedYearId) {
+      fetchStudents()
       fetchPayments()
     }
   }, [selectedYearId])
 
   useEffect(() => {
     applyFilters()
-  }, [students, filters, payments,selectedYearId])
+  }, [students, filters, payments])
 
-  useEffect(() => {
-  if (selectedYearId) {
-    fetchStudents()
-    fetchPayments()
+  const fetchStudents = async () => {
+    const res = await fetch(`/api/students?academicYearId=${selectedYearId}`)
+    const data = await res.json()
+    setStudents(data.filter((s: Student) => !s.isArchived))
   }
-}, [selectedYearId])
-
-      const fetchStudents = async () => {
-  const res = await fetch(
-    `/api/students?academicYearId=${selectedYearId}`
-  )
-
-  const data = await res.json()
-
-  setStudents(data.filter((s: Student) => !s.isArchived))
-}
 
   const fetchData = async () => {
     try {
       const [yearsRes, deptsRes] = await Promise.all([
-  fetch('/api/academic-years'),
-  isAdmin ? fetch('/api/departments') : Promise.resolve({ json: () => [] }),
-])
+        fetch('/api/academic-years'),
+        isAdmin ? fetch('/api/departments') : Promise.resolve({ json: () => [] }),
+      ])
 
       const yearsData = await yearsRes.json()
       setAcademicYears(yearsData)
       if (isAdmin) {
         setDepartments(await deptsRes.json())
       }
-
 
       const currentYear = yearsData.find((y: AcademicYear) => y.isCurrent)
       if (currentYear) {
@@ -152,6 +147,7 @@ export default function BillList({ role }: BillListProps) {
         body: JSON.stringify({
           studentId: selectedStudent.id,
           academicYearId: selectedYearId,
+          paymentDate: currentDate.toISOString(),
         }),
       })
       if (!res.ok) {
@@ -159,16 +155,27 @@ export default function BillList({ role }: BillListProps) {
         throw new Error(error.error || 'Payment failed')
       }
       const payment = await res.json()
-      showToast('Payment successful!', 'success')
+      setPaymentId(payment.id)
       setShowPaymentModal(false)
+      setShowSuccessModal(true)
       // Refresh payment status
       fetchPayments()
-      // Open receipt in new tab
-      window.open(`/receipt/${payment.id}`, '_blank')
     } catch (error: any) {
       showToast(error.message, 'error')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleViewReceiptFromSuccess = () => {
+    if (paymentId) {
+      router.push(`/receipt/${paymentId}`)
+    }
+  }
+
+  const handlePrintReceiptFromSuccess = () => {
+    if (paymentId) {
+      router.push(`/receipt/${paymentId}?autoPrint=true&redirect=/admin/bills`)
     }
   }
 
@@ -309,7 +316,7 @@ export default function BillList({ role }: BillListProps) {
         </table>
       </div>
 
-      {/* Payment Modal */}
+      {/* Payment Confirmation Modal */}
       {showPaymentModal && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -321,6 +328,7 @@ export default function BillList({ role }: BillListProps) {
                 <p><strong>Course:</strong> {selectedStudent.course?.name}</p>
                 <p><strong>Fee Amount:</strong> ₹{selectedStudent.course?.fee}</p>
                 <p><strong>Academic Year:</strong> {academicYears.find(y => y.id === selectedYearId)?.year}</p>
+                <p className="text-xs text-gray-500 mt-1">Payment Date: {currentDate.toLocaleDateString()}</p>
               </div>
               <div className="flex justify-end gap-3">
                 <button
@@ -337,6 +345,46 @@ export default function BillList({ role }: BillListProps) {
                   {submitting ? 'Processing...' : 'Confirm Payment'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal (same as New Payment page) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="text-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mt-2">Payment Successful!</h3>
+              <p className="text-sm text-gray-600">Receipt #{paymentId?.slice(0, 8)}</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleViewReceiptFromSuccess}
+                className="btn-primary w-full"
+              >
+                View Receipt
+              </button>
+              <button
+                onClick={handlePrintReceiptFromSuccess}
+                className="btn-secondary w-full"
+              >
+                Print Receipt
+              </button>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false)
+                  setPaymentId(null)
+                }}
+                className="text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

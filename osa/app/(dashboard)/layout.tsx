@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import DashboardHeader from '@/components/DashboardHeader'
 
 export default function DashboardLayout({
   children,
@@ -55,6 +56,7 @@ export default function DashboardLayout({
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <main className="flex-1 ml-64 overflow-auto">
+        <DashboardHeader />
         <div className="p-8">
           {children}
         </div>

@@ -97,6 +97,15 @@ export async function GET() {
     take: 10,
   })
 
+  const today = new Date()
+today.setHours(0, 0, 0, 0)
+const todayPayments = await prisma.payment.count({
+  where: {
+    paymentDate: { gte: today },
+    student: studentWhere,
+  },
+})
+
   return NextResponse.json({
     totalStudents,
     paidStudents,
@@ -104,5 +113,6 @@ export async function GET() {
     totalCollection: totalCollection._sum.amount || 0,
     departmentStats,
     recentPayments,
+    todayPayments,
   })
 }

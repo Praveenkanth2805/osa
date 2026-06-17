@@ -7,6 +7,10 @@ async function main() {
   // Create admin user
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@college.edu'
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123'
+  if (!adminEmail  || !adminPassword) {
+  throw new Error('ADMIN_EMAIL or ADMIN_PASSWORD is missing')
+}
+
   const hashedPassword = await bcrypt.hash(adminPassword, 10)
 
   await prisma.user.upsert({
@@ -55,6 +59,25 @@ async function main() {
       },
     })
   }
+  // Create office user
+   const officeEmail = process.env.OFFICE_EMAIL 
+  const officePassword = process.env.OFFICE_PASSWORD 
+  if (!officeEmail || !officePassword) {
+  throw new Error('OFFICE_EMAIL or OFFICE_PASSWORD is missing')
+}
+
+const officehashedPassword = await bcrypt.hash(officePassword, 10)
+await prisma.user.upsert({
+  where: { email: officeEmail},
+  update: {},
+  create: {
+    email: officeEmail,
+    password: officehashedPassword,
+    name: 'Office Staff',
+    role: 'OFFICE_USER',
+    departmentId: null,
+  },
+})
 
   console.log('Seed completed.')
 }

@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateReceiptNumber } from '@/lib/utils'
 import bcrypt from 'bcrypt'
-
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -13,12 +11,24 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const studentId = searchParams.get('studentId')
   const academicYearId = searchParams.get('academicYearId')
+  const fromDate = searchParams.get('fromDate')
+  const toDate = searchParams.get('toDate')
 
   const where: any = {}
   if (studentId) where.studentId = studentId
   if (academicYearId) where.academicYearId = academicYearId
   if (session.user.role !== 'ADMIN') {
     where.student = { departmentId: session.user.departmentId }
+  }
+
+  // Date filters – apply before query
+  if (fromDate) {
+    where.paymentDate = { gte: new Date(fromDate) }
+  }
+  if (toDate) {
+    const endDate = new Date(toDate)
+    endDate.setHours(23, 59, 59, 999)
+    where.paymentDate = { ...where.paymentDate, lte: endDate }
   }
 
   try {
@@ -43,8 +53,14 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Allow ADMIN, DEPARTMENT, and OFFICE_USER to create payments
+  const allowedRoles = ['ADMIN', 'DEPARTMENT', 'OFFICE_USER']
+  if (!allowedRoles.includes(session.user.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
-    const { studentId, academicYearId } = await req.json()
+    const { studentId, academicYearId, paymentDate } = await req.json()
 
     // Check if already paid
     const existing = await prisma.payment.findFirst({
@@ -65,29 +81,18 @@ export async function POST(req: NextRequest) {
     })
     if (!academicYear) return NextResponse.json({ error: 'Academic year not found' }, { status: 404 })
 
-    // Get next receipt number sequence
-const receiptYear = academicYear.endYear
-
-const lastPayment = await prisma.payment.findFirst({
-  where: {
-    receiptNumber: {
-      startsWith: `${receiptYear}-`,
-    },
-  },
-  orderBy: {
-    receiptNumber: 'desc',
-  },
-})
-
-let sequence = 1
-
-if (lastPayment) {
-  const seqPart = lastPayment.receiptNumber.split('-')[1]
-  sequence = parseInt(seqPart, 10) + 1
-}
-
-const receiptNumber =
-  `${receiptYear}-${String(sequence).padStart(5, '0')}`
+    // Generate receipt number: endYear-XXXXX
+    const receiptYear = academicYear.endYear
+    const lastPayment = await prisma.payment.findFirst({
+      where: { receiptNumber: { startsWith: `${receiptYear}-` } },
+      orderBy: { receiptNumber: 'desc' },
+    })
+    let sequence = 1
+    if (lastPayment) {
+      const seqPart = lastPayment.receiptNumber.split('-')[1]
+      sequence = parseInt(seqPart, 10) + 1
+    }
+    const receiptNumber = `${receiptYear}-${String(sequence).padStart(5, '0')}`
 
     const payment = await prisma.payment.create({
       data: {
@@ -96,6 +101,7 @@ const receiptNumber =
         academicYearId,
         amount: student.course.fee,
         status: 'PAID',
+        paymentDate: paymentDate ? new Date(paymentDate) : undefined,
       },
       include: {
         student: { include: { department: true, course: true } },

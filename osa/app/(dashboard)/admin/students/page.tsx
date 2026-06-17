@@ -1,15 +1,21 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useSession } from 'next-auth/react'
 import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { Student, Department, Course, AcademicYear } from '@/types'
-import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
-import { useDebounce } from '@/hooks/useDebounce' 
+import { useDebounce } from '@/hooks/useDebounce'
 
 export default function StudentsPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'ADMIN'
+  const isOffice = session?.user?.role === 'OFFICE_USER'
+  const canEdit = isAdmin // only admin can edit/delete/add
+
   const [students, setStudents] = useState<Student[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [courses, setCourses] = useState<Course[]>([])
@@ -25,6 +31,7 @@ export default function StudentsPage() {
     isOpen: false,
     studentId: '',
   })
+
   const [formData, setFormData] = useState({
     registerNumber: '',
     name: '',
@@ -41,16 +48,14 @@ export default function StudentsPage() {
     departmentId: '',
     courseId: '',
     academicYearId: '',
-    status: 'active', // 'active', 'archived', 'all'
+    status: 'active',
   })
 
   const { showToast } = useToast()
 
-  // Debounce text filters
   const debouncedRegisterNumber = useDebounce(filters.registerNumber, 500)
   const debouncedName = useDebounce(filters.name, 500)
 
-  // Fetch data whenever filters change
   useEffect(() => {
     fetchFilteredStudents()
   }, [debouncedRegisterNumber, debouncedName, filters.departmentId, filters.courseId, filters.academicYearId, filters.status])
@@ -66,7 +71,6 @@ export default function StudentsPage() {
       if (filters.academicYearId) params.append('academicYearId', filters.academicYearId)
       if (filters.status === 'active') params.append('isArchived', 'false')
       else if (filters.status === 'archived') params.append('isArchived', 'true')
-      // 'all' sends no isArchived param
 
       const res = await fetch(`/api/students?${params.toString()}`)
       if (!res.ok) throw new Error()
@@ -100,102 +104,97 @@ export default function StudentsPage() {
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
+    e.preventDefault()
 
-  // If editing and academic year changed, check for payments
-  if (editingStudent && editingStudent.academicYearId !== formData.academicYearId) {
-    try {
-      const checkRes = await fetch(`/api/students/${editingStudent.id}/has-payments`)
-      const { hasPayments } = await checkRes.json()
-      if (hasPayments) {
-        setPendingFormData(formData)
-        setShowYearChangeWarning(true)
+    if (editingStudent && editingStudent.academicYearId !== formData.academicYearId) {
+      try {
+        const checkRes = await fetch(`/api/students/${editingStudent.id}/has-payments`)
+        const { hasPayments } = await checkRes.json()
+        if (hasPayments) {
+          setPendingFormData(formData)
+          setShowYearChangeWarning(true)
+          return
+        }
+      } catch (error) {
+        showToast('Failed to verify payment status', 'error')
         return
       }
-    } catch (error) {
-      showToast('Failed to verify payment status', 'error')
-      return
-    }
-  }
-
-  await saveStudent()
-}
-
-const saveStudent = async () => {
-  try {
-    const url = editingStudent ? `/api/students?id=${editingStudent.id}` : '/api/students'
-    const method = editingStudent ? 'PUT' : 'POST'
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    })
-
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.error || 'Failed to save student')
     }
 
-    showToast(`Student ${editingStudent ? 'updated' : 'added'} successfully`, 'success')
-    setShowModal(false)
-    resetForm()
-    fetchFilteredStudents()
-  } catch (error: any) {
-    showToast(error.message, 'error')
-  }
-}
-
-const confirmYearChange = async () => {
-  setShowYearChangeWarning(false)
-  // Restore the pending form data and save
-  if (pendingFormData) {
-    setFormData(pendingFormData)
     await saveStudent()
-    setPendingFormData(null)
   }
-}
+
+  const saveStudent = async () => {
+    try {
+      const url = editingStudent ? `/api/students?id=${editingStudent.id}` : '/api/students'
+      const method = editingStudent ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to save student')
+      }
+
+      showToast(`Student ${editingStudent ? 'updated' : 'added'} successfully`, 'success')
+      setShowModal(false)
+      resetForm()
+      fetchFilteredStudents()
+    } catch (error: any) {
+      showToast(error.message, 'error')
+    }
+  }
+
+  const confirmYearChange = async () => {
+    setShowYearChangeWarning(false)
+    if (pendingFormData) {
+      setFormData(pendingFormData)
+      await saveStudent()
+      setPendingFormData(null)
+    }
+  }
 
   const handleDeleteClick = async (studentId: string) => {
-  // Check if student has payments
-  try {
-    const checkRes = await fetch(`/api/students/${studentId}/has-payments`)
-    const { hasPayments } = await checkRes.json()
-    
-    if (hasPayments) {
-      setPendingDeleteId(studentId)
-      setShowPaymentWarning(true)
-    } else {
-      // No payments, proceed directly
-      setDeleteConfirm({ isOpen: true, studentId })
-    }
-  } catch (error) {
-    showToast('Failed to check payment status', 'error')
-  }
-}
+    try {
+      const checkRes = await fetch(`/api/students/${studentId}/has-payments`)
+      const { hasPayments } = await checkRes.json()
 
-const confirmDeleteWithPayment = async () => {
-  if (!pendingDeleteId) return
-  setShowPaymentWarning(false)
-  // Now proceed with deletion
-  await performDelete(pendingDeleteId)
-  setPendingDeleteId(null)
-}
-
-const performDelete = async (studentId: string) => {
-  try {
-    const res = await fetch(`/api/students?id=${studentId}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.error || 'Failed to delete student')
+      if (hasPayments) {
+        setPendingDeleteId(studentId)
+        setShowPaymentWarning(true)
+      } else {
+        setDeleteConfirm({ isOpen: true, studentId })
+      }
+    } catch (error) {
+      showToast('Failed to check payment status', 'error')
     }
-    showToast('Student deleted successfully', 'success')
-    setDeleteConfirm({ isOpen: false, studentId: '' })
-    fetchFilteredStudents() // refresh the list
-  } catch (error: any) {
-    showToast(error.message, 'error')
   }
-}
+
+  const confirmDeleteWithPayment = async () => {
+    if (!pendingDeleteId) return
+    setShowPaymentWarning(false)
+    await performDelete(pendingDeleteId)
+    setPendingDeleteId(null)
+  }
+
+  const performDelete = async (studentId: string) => {
+    try {
+      const res = await fetch(`/api/students?id=${studentId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to delete student')
+      }
+      showToast('Student deleted successfully', 'success')
+      setDeleteConfirm({ isOpen: false, studentId: '' })
+      fetchFilteredStudents()
+    } catch (error: any) {
+      showToast(error.message, 'error')
+    }
+  }
 
   const resetForm = () => {
     setFormData({
@@ -222,7 +221,6 @@ const performDelete = async (studentId: string) => {
     setShowModal(true)
   }
 
-  // Reset filters
   const clearFilters = () => {
     setFilters({
       registerNumber: '',
@@ -234,7 +232,6 @@ const performDelete = async (studentId: string) => {
     })
   }
 
-  // Filter courses based on selected department (for dropdown)
   const filteredCourses = useMemo(() => {
     if (!filters.departmentId) return courses
     return courses.filter(c => c.departmentId === filters.departmentId)
@@ -246,17 +243,19 @@ const performDelete = async (studentId: string) => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-        <div className="flex gap-3">
-          <Link href="/admin/students/import" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            Import Excel
-          </Link>
-          <button onClick={() => setShowModal(true)} className="btn-primary">
-            Add Student
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex gap-3">
+            <Link href="/admin/students/import" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              Import Excel
+            </Link>
+            <button onClick={() => setShowModal(true)} className="btn-primary">
+              Add Student
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Filter Bar */}
+      {/* Filter Bar (same) */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           <div>
@@ -350,7 +349,7 @@ const performDelete = async (studentId: string) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Academic Year</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              {canEdit && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -368,30 +367,31 @@ const performDelete = async (studentId: string) => {
                     <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  <button onClick={() => editStudent(student)} className="text-blue-600 hover:text-blue-800 mr-3">
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  <button
-  onClick={() => handleDeleteClick(student.id)}
-  className="text-red-600 hover:text-red-800"
->
-  <TrashIcon className="w-5 h-5" />
-</button>
-                </td>
+                {canEdit && (
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <button onClick={() => editStudent(student)} className="text-blue-600 hover:text-blue-800 mr-3">
+                      <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button onClick={() => handleDeleteClick(student.id)} className="text-red-600 hover:text-red-800">
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
             {students.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center py-8 text-gray-500">No students found</td>
+                <td colSpan={canEdit ? 7 : 6} className="text-center py-8 text-gray-500">
+                  No students found
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Student Modal (unchanged) */}
-      {showModal && (
+      {/* Modal - only shown if canEdit */}
+      {canEdit && showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">{editingStudent ? 'Edit Student' : 'Add Student'}</h3>
@@ -446,79 +446,80 @@ const performDelete = async (studentId: string) => {
         </div>
       )}
 
+      {/* Warning dialogs */}
       {showPaymentWarning && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-      <h3 className="text-lg font-semibold text-red-600 mb-2">⚠️ Payment Record Exists</h3>
-      <p className="text-gray-700 mb-4">
-        This student has made a payment. Deleting the student will also permanently delete the associated payment record.
-        This action cannot be undone.
-      </p>
-      <p className="text-gray-600 mb-6">Are you absolutely sure you want to delete this student?</p>
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => {
-            setShowPaymentWarning(false)
-            setPendingDeleteId(null)
-          }}
-          className="btn-secondary"
-        >
-          Cancel
-        </button>
-        <button onClick={confirmDeleteWithPayment} className="btn-danger">
-          Yes, Delete Student & Payment
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-red-600 mb-2">⚠️ Payment Record Exists</h3>
+            <p className="text-gray-700 mb-4">
+              This student has made a payment. Deleting the student will also permanently delete the associated payment record.
+              This action cannot be undone.
+            </p>
+            <p className="text-gray-600 mb-6">Are you absolutely sure you want to delete this student?</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowPaymentWarning(false)
+                  setPendingDeleteId(null)
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button onClick={confirmDeleteWithPayment} className="btn-danger">
+                Yes, Delete Student & Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-{showYearChangeWarning && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-      <div className="flex items-center gap-2 mb-3">
-        <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <h3 className="text-lg font-semibold text-gray-900">Warning: Academic Year Change</h3>
-      </div>
-      <p className="text-gray-700 mb-3">
-        This student has already made a payment for their current academic year.
-      </p>
-      <p className="text-gray-700 mb-4">
-        Changing the academic year will:
-      </p>
-      <ul className="list-disc list-inside text-sm text-gray-600 mb-4 space-y-1">
-        <li>Keep the existing payment record for the original academic year</li>
-        <li>Mark the student as <strong>Unpaid</strong> for the new academic year</li>
-        <li>Require a new payment for the new academic year</li>
-      </ul>
-      <p className="text-red-600 text-sm mb-5">This action cannot be undone.</p>
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => {
-            setShowYearChangeWarning(false)
-            setPendingFormData(null)
-          }}
-          className="btn-secondary"
-        >
-          Cancel
-        </button>
-        <button onClick={confirmYearChange} className="btn-primary bg-yellow-600 hover:bg-yellow-700">
-          Yes, Change Academic Year
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {showYearChangeWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-2 mb-3">
+              <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900">Warning: Academic Year Change</h3>
+            </div>
+            <p className="text-gray-700 mb-3">
+              This student has already made a payment for their current academic year.
+            </p>
+            <p className="text-gray-700 mb-4">
+              Changing the academic year will:
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-600 mb-4 space-y-1">
+              <li>Keep the existing payment record for the original academic year</li>
+              <li>Mark the student as <strong>Unpaid</strong> for the new academic year</li>
+              <li>Require a new payment for the new academic year</li>
+            </ul>
+            <p className="text-red-600 text-sm mb-5">This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowYearChangeWarning(false)
+                  setPendingFormData(null)
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button onClick={confirmYearChange} className="btn-primary bg-yellow-600 hover:bg-yellow-700">
+                Yes, Change Academic Year
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-<ConfirmDialog
-  isOpen={deleteConfirm.isOpen && !showPaymentWarning}
-  title="Delete Student"
-  message="Are you sure you want to delete this student? This action cannot be undone."
-  onConfirm={() => performDelete(deleteConfirm.studentId)}
-  onCancel={() => setDeleteConfirm({ isOpen: false, studentId: '' })}
-/>
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen && !showPaymentWarning}
+        title="Delete Student"
+        message="Are you sure you want to delete this student? This action cannot be undone."
+        onConfirm={() => performDelete(deleteConfirm.studentId)}
+        onCancel={() => setDeleteConfirm({ isOpen: false, studentId: '' })}
+      />
     </div>
   )
 }

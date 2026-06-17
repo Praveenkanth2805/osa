@@ -38,11 +38,20 @@ const departmentMenuItems = [
   // { name: 'Empty Receipt', href: '/receipt/empty', icon: DocumentDuplicateIcon }
 ]
 
+const officeMenuItems = [
+  { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
+  { name: 'Students', href: '/admin/students', icon: UsersIcon },
+  { name: 'Payments', href: '/admin/payments', icon: CreditCardIcon },
+  { name: 'Bill', href: '/admin/bills', icon: DocumentTextIcon },
+  // { name: 'Empty Receipt', href: '/receipt/empty', icon: DocumentDuplicateIcon },
+]
+
 export default function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const isAdmin = session?.user?.role === 'ADMIN'
-  const menuItems = isAdmin ? adminMenuItems : departmentMenuItems
+const isAdmin = session?.user?.role === 'ADMIN'
+const isOffice = session?.user?.role === 'OFFICE_USER'
+const menuItems = isAdmin ? adminMenuItems : (isOffice ? officeMenuItems : departmentMenuItems)
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-primary-700 text-white flex flex-col">

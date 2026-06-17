@@ -72,6 +72,7 @@ export interface DashboardStats {
   paidStudents: number
   unpaidStudents: number
   totalCollection: number
+  todayPayments: number
   departmentStats: Array<{
     departmentName: string
     total: number

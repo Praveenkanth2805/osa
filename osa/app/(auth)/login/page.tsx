@@ -79,7 +79,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="input-field pr-10"
                 />
-                <button
+                {/* <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
@@ -89,7 +89,7 @@ export default function LoginPage() {
                   ) : (
                     <EyeIcon className="h-5 w-5" />
                   )}
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

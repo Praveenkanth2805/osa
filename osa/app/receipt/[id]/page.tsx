@@ -6,6 +6,9 @@ import { useToast } from '@/contexts/ToastContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { Payment, Student, AcademicYear } from '@/types'
 import QRCode from 'qrcode'
+import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+
 
 // Convert number to words (Indian system)
 function numberToWords(num: number): string {
@@ -167,10 +170,30 @@ export default function ReceiptPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
+  const searchParams = useSearchParams()
+  const autoPrint = searchParams.get('autoPrint') === 'true'
+  const [printTriggered, setPrintTriggered] = useState(false)
+  const router = useRouter()
+  const redirectUrl = searchParams.get('redirect') || null
 
   useEffect(() => {
     fetchReceipt()
   }, [id])
+
+ useEffect(() => {
+  if (autoPrint && !printTriggered && payment) {
+    setPrintTriggered(true)
+    setTimeout(() => {
+      window.print()
+      showToast('Print job sent successfully', 'success')
+      if (redirectUrl) {
+        setTimeout(() => {
+          router.replace(redirectUrl)
+        }, 1500) // give time for toast
+      }
+    }, 800)
+  }
+}, [autoPrint, payment, printTriggered])
 
   const fetchReceipt = async () => {
     try {
@@ -194,8 +217,16 @@ export default function ReceiptPage() {
       setLoading(false)
     }
   }
-
-  const handlePrint = () => window.print()
+  
+  const handlePrint = () => {
+  window.print()
+  window.onafterprint = () => {
+    showToast('Print job sent successfully', 'success')
+    if (redirectUrl) {
+      router.replace(redirectUrl)
+    }
+  }
+}
   const handleDownloadPDF = async () => {
     try {
       const res = await fetch(`/api/receipts/${id}/pdf`)
