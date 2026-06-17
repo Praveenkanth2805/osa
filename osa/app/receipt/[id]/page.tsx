@@ -272,6 +272,12 @@ export default function ReceiptPage() {
           {/* <button onClick={handleDownloadPDF} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
             Download PDF
           </button> */}
+          <button
+  onClick={() => router.push('/admin/bills')}
+  className="btn-secondary px-6 py-2"
+>
+  Back
+</button>
         </div>
       </div>
 

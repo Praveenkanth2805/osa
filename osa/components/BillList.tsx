@@ -127,8 +127,9 @@ export default function BillList({ role }: BillListProps) {
   }
 
   const handleViewReceipt = (paymentId: string) => {
-    window.open(`/receipt/${paymentId}`, '_blank')
+    window.open(`/receipt/${paymentId}`, '_blank','noopener,noreferrer')
   }
+
 
   const handlePayClick = (student: Student) => {
     setSelectedStudent(student)
