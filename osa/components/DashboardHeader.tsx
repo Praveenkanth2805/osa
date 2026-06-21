@@ -73,8 +73,8 @@ useEffect(() => {
       : ''
   }`}
 >
-  <div className="font-medium">{formattedDate}</div>
-  <div className="text-xs">{formattedTime}</div>
+  <div className="font-bold">{formattedDate}</div>
+  <div className="text-xs font-bold">{formattedTime}</div>
 </div>
 
   {showDatePicker && (
