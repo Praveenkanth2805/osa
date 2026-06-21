@@ -42,6 +42,33 @@ export default function ReportsList({ role }: ReportsListProps) {
       fetchReport()
     }
   }, [filters])
+  const [printLoading, setPrintLoading] = useState(false)
+
+const handlePrint = async () => {
+  if (!filters.fromDate || !filters.toDate) {
+    showToast('Please select date range', 'error')
+    return
+  }
+  setPrintLoading(true)
+  try {
+    const res = await fetch('/api/reports/print', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromDate: filters.fromDate,
+        toDate: filters.toDate,
+        status: filters.status,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Print failed')
+    showToast('Print job sent successfully', 'success')
+  } catch (error: any) {
+    showToast(error.message, 'error')
+  } finally {
+    setPrintLoading(false)
+  }
+}
 
   const fetchReport = async () => {
     setLoading(true)
@@ -54,6 +81,9 @@ export default function ReportsList({ role }: ReportsListProps) {
       const res = await fetch(`/api/reports?${params}`)
       if (!res.ok) throw new Error('Failed to fetch report')
       const data = await res.json()
+    if (data.length === 0) {
+  showToast('No records found for the selected filters', 'warning')
+}
       setReportData(data)
     } catch (error) {
       showToast('Failed to load report', 'error')
@@ -70,7 +100,11 @@ export default function ReportsList({ role }: ReportsListProps) {
         status: filters.status,
       })
       const res = await fetch(`/api/reports/pdf?${params}`)
-      if (!res.ok) throw new Error('Failed to generate PDF')
+       if (!res.ok) {
+      const errorData = await res.json()
+      showToast(errorData.error || 'Failed to generate PDF', 'error')
+      return
+    }
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -128,6 +162,14 @@ export default function ReportsList({ role }: ReportsListProps) {
             <button onClick={handleDownloadPDF} className="btn-primary bg-blue-600 hover:bg-blue-700">
               Download PDF
             </button>
+            <button
+  onClick={handlePrint}
+  disabled={printLoading}
+  className="btn-primary bg-green-600 hover:bg-green-700"
+>
+  {printLoading ? 'Printing...' : 'Print Report'}
+</button>
+
           </div>
         </div>
       </div>

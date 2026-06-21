@@ -127,7 +127,7 @@ export default function BillList({ role }: BillListProps) {
   }
 
   const handleViewReceipt = (paymentId: string) => {
-    window.open(`/receipt/${paymentId}`, '_blank','noopener,noreferrer')
+    router.push(`/receipt/${paymentId}`)
   }
 
 
@@ -168,13 +168,9 @@ export default function BillList({ role }: BillListProps) {
     }
   }
 
- const handleViewReceiptFromSuccess = () => {
+const handleViewReceiptFromSuccess = () => {
   if (paymentId) {
-    const newTab = window.open('', '_blank')
-
-    if (newTab) {
-      newTab.location.href = `/receipt/${paymentId}`
-    }
+    router.push(`/receipt/${paymentId}`)
   }
 }
 
