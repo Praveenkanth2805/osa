@@ -10,7 +10,6 @@ export default function DashboardHeader() {
   const { data: session } = useSession()
   const { currentDate, setSystemDate, resetToCurrentDate } = useSystemDate()
   const [showDatePicker, setShowDatePicker] = useState(false)
-  const [showPopup, setShowPopup] = useState(true)
   const [showHighlight, setShowHighlight] = useState(true)
   const [tempDate, setTempDate] = useState<string>('')
   const [liveTime, setLiveTime] = useState(new Date())
@@ -52,38 +51,16 @@ export default function DashboardHeader() {
     minute: '2-digit',
     second: '2-digit',
   })
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setShowHighlight(false)
+  }, 5000)
+
+  return () => clearTimeout(timer)
+}, [])
 
   return (
     <div className="flex justify-between items-center bg-white shadow-sm px-6 py-3 border-b">
-      
-    {showPopup && (
-  <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
-    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-      <h3 className="text-lg font-semibold mb-2">
-        System Date & Time
-      </h3>
-
-      <p className="text-gray-600 mb-4">
-        Click the ⚙️ icon near the date and time to change the system date.
-      </p>
-
-      <div className="flex justify-end">
-        <button
-         onClick={() => {
-  setShowPopup(false)
-
-  setTimeout(() => {
-    setShowHighlight(false)
-  }, 5000)
-}}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Got it
-        </button>
-      </div>
-    </div>
-  </div>
-)}
       <div className="flex items-center gap-4">
         <h2 className="text-lg font-semibold">Welcome, {session?.user?.name}</h2>
         

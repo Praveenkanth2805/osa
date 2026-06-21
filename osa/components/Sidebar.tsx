@@ -14,7 +14,8 @@ import {
   ArchiveBoxIcon,
   DocumentTextIcon,
   ArrowRightOnRectangleIcon,
-  DocumentDuplicateIcon
+  DocumentDuplicateIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline'
 
 const adminMenuItems = [
@@ -27,6 +28,7 @@ const adminMenuItems = [
   { name: 'Departments', href: '/admin/departments', icon: BuildingLibraryIcon },
   { name: 'Courses', href: '/admin/courses', icon: BookOpenIcon },
   { name: 'Department Users', href: '/admin/users', icon: UserGroupIcon },
+  { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
   // { name: 'Archive', href: '/admin/archive', icon: ArchiveBoxIcon },
 ]
 

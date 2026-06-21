@@ -168,11 +168,15 @@ export default function BillList({ role }: BillListProps) {
     }
   }
 
-  const handleViewReceiptFromSuccess = () => {
-    if (paymentId) {
-      router.push(`/receipt/${paymentId}`)
+ const handleViewReceiptFromSuccess = () => {
+  if (paymentId) {
+    const newTab = window.open('', '_blank')
+
+    if (newTab) {
+      newTab.location.href = `/receipt/${paymentId}`
     }
   }
+}
 
   const handlePrintReceiptFromSuccess = () => {
     if (paymentId) {
