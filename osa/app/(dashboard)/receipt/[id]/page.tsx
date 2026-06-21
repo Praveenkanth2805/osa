@@ -249,7 +249,7 @@ export default function ReceiptPage() {
   if (!payment) return <div>Receipt not found</div>
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 print:bg-white print:py-0">
+    <div id="receipt-print-area" className="min-h-screen bg-gray-100 py-8 print:bg-white print:py-0">
       {/* A4 Landscape container */}
       <div className="max-w-[297mm] mx-auto relative print:max-w-none">
         {/* Background Watermark - centered on whole page */}
@@ -284,24 +284,41 @@ export default function ReceiptPage() {
       {/* Print-specific CSS to enforce A4 landscape and two-column layout */}
       <style jsx global>{`
         @media print {
-          @page {
-            size: A4 landscape;
-            margin: 1cm;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-          }
-          .bg-gray-100, .min-h-screen {
-            background: white !important;
-          }
-          .shadow-lg, .shadow {
-            box-shadow: none !important;
-          }
-          .border {
-            border-color: #ccc !important;
-          }
-        }
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #receipt-print-area,
+  #receipt-print-area * {
+    visibility: visible;
+  }
+
+  #receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  .shadow-lg,
+  .shadow {
+    box-shadow: none !important;
+  }
+
+  .border {
+    border-color: #ccc !important;
+  }
+}
       `}</style>
     </div>
   )
