@@ -45,11 +45,10 @@ export default function ReportsList({ role }: ReportsListProps) {
   const [printLoading, setPrintLoading] = useState(false)
 
 const handlePrint = async () => {
-  if (!filters.fromDate || !filters.toDate) {
-    showToast('Please select date range', 'error')
-    return
-  }
-  setPrintLoading(true)
+  const confirmed = window.confirm('Are you sure you want to print this report?')
+  if (!confirmed) return
+
+  setLoading(true)
   try {
     const res = await fetch('/api/reports/print', {
       method: 'POST',
@@ -61,12 +60,19 @@ const handlePrint = async () => {
       }),
     })
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Print failed')
-    showToast('Print job sent successfully', 'success')
+    if (!res.ok) {
+      if (res.status === 404) {
+        showToast('No records found to print', 'warning')
+      } else {
+        throw new Error(data.error || 'Failed to print')
+      }
+    } else {
+      showToast('Print job sent successfully', 'success')
+    }
   } catch (error: any) {
     showToast(error.message, 'error')
   } finally {
-    setPrintLoading(false)
+    setLoading(false)
   }
 }
 
